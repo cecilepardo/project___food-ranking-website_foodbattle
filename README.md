@@ -12,6 +12,15 @@ Puis ouvrir http://localhost:8081 (le port 8081 évite le conflit avec l'ancien 
 
 Remettre la base à zéro : `docker compose down -v`, puis relancer.
 
+### Comptes de démonstration (local uniquement)
+
+| Rôle  | Email                    | Mot de passe       |
+|-------|--------------------------|--------------------|
+| admin | `admin@foodbattle.local` | `foodbattle-admin` |
+| user  | `user@foodbattle.local`  | `foodbattle-user`  |
+
+L'inscription (`/inscription`) crée toujours un compte `user` ; un admin ne se crée qu'en base.
+
 ## Organisation
 
 ```
@@ -20,6 +29,7 @@ config/routes.php       Liste des URL et du controller appelé pour chacune
 app/Core/               Routeur, rendu des vues, base de données, CSRF, helpers
 app/Models/             Requêtes SQL uniquement
 app/Controllers/        Lisent la requête, appellent les Models, choisissent la vue
+app/Middlewares/        Vérifications exécutées par le routeur avant le controller (ex. RequireAdmin)
 app/Views/              HTML uniquement (layout.php, partials/ et un fichier par page)
 public/assets/css/      variables → base → layout → components → pages
 ```
@@ -27,7 +37,8 @@ public/assets/css/      variables → base → layout → components → pages
 Règles :
 - un **Model** ne contient pas de HTML et ne lit pas `$_GET` / `$_POST` ;
 - un **Controller** ne contient ni SQL ni HTML ;
-- une **View** ne fait pas de SQL ; tout texte affiché passe par `e()`.
+- une **View** ne fait pas de SQL ; tout texte affiché passe par `e()` ;
+- toute route d'administration est déclarée **dans** le groupe `RequireAdmin` de `config/routes.php`.
 
 ## Correspondance avec l'ancien code
 

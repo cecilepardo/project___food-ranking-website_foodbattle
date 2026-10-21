@@ -10,8 +10,6 @@ use App\Models\Establishment;
 
 /**
  * Dashboard : liste des plats et des établissements, ajout d'un plat.
- *
- * BUG connu : aucune authentification, n'importe qui peut accéder au dashboard.
  */
 class DashboardController extends Controller
 {

@@ -1,7 +1,29 @@
+-- pgcrypto fournit crypt() et gen_salt(), utilisés pour hacher les mots de passe des comptes de démo.
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE TABLE establishments (id SERIAL PRIMARY KEY, name VARCHAR(120) NOT NULL, city VARCHAR(80) NOT NULL, address TEXT NOT NULL);
 CREATE TABLE dishes (id SERIAL PRIMARY KEY, establishment_id INTEGER NOT NULL REFERENCES establishments(id), name VARCHAR(120) NOT NULL, category VARCHAR(20) NOT NULL, description TEXT NOT NULL DEFAULT '', price NUMERIC(8,2) NOT NULL);
 CREATE TABLE ratings (id SERIAL PRIMARY KEY, dish_id INTEGER NOT NULL REFERENCES dishes(id) ON DELETE CASCADE, nickname VARCHAR(60) NOT NULL, score INTEGER NOT NULL CHECK(score BETWEEN 1 AND 5), comment TEXT NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'published', created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE votes (id SERIAL PRIMARY KEY, dish_id INTEGER NOT NULL REFERENCES dishes(id) ON DELETE CASCADE, visitor_key VARCHAR(128) NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
+
+-- Comptes du site. L'inscription publique crée toujours un 'user' ;
+-- un 'admin' ne peut être créé que directement en base.
+CREATE TABLE users (
+    id            SERIAL PRIMARY KEY,
+    -- Identifiant de connexion, stocké en minuscules (normalisé par le PHP, garanti par le CHECK).
+    email         VARCHAR(254) NOT NULL UNIQUE CHECK (email = lower(email)),
+    -- Nom public, affiché à la place de l'email pour anonymiser votes et avis.
+    nickname      VARCHAR(60)  NOT NULL CHECK (length(trim(nickname)) > 0),
+    -- Hash bcrypt : le mot de passe en clair n'est jamais stocké.
+    password_hash VARCHAR(255) NOT NULL,
+    role          VARCHAR(10)  NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Pseudo unique sans tenir compte de la casse ("Toto" et "toto" ne peuvent pas coexister),
+-- tout en gardant à l'affichage la casse choisie par l'utilisateur.
+CREATE UNIQUE INDEX users_nickname_unique ON users (lower(nickname));
+
 INSERT INTO establishments(name,city,address) VALUES
 ('Le Comptoir Smash','Lille','12 rue des Ateliers'),('Taco Tempo','Lille','8 place du Marché'),('Forno Club','Roubaix','24 rue des Tisserands'),('La Planque du Burger','Roubaix','5 rue du Canal'),('Tacos & Co','Tourcoing','17 avenue des Érables'),('Pizza Minuit','Lille','3 rue des Halles');
 INSERT INTO dishes(establishment_id,name,category,description,price) VALUES(1,'Le Double Smash','burger','Deux steaks, cheddar, pickles et sauce maison.',12.5);
@@ -185,3 +207,10 @@ INSERT INTO votes(dish_id,visitor_key) VALUES(12,'seed-12-6');
 INSERT INTO votes(dish_id,visitor_key) VALUES(12,'seed-12-7');
 INSERT INTO votes(dish_id,visitor_key) VALUES(12,'seed-12-8');
 INSERT INTO votes(dish_id,visitor_key) VALUES(12,'seed-12-9');
+
+-- Comptes de démonstration, un par rôle (local uniquement : à changer avant toute mise en ligne).
+-- admin@foodbattle.local / foodbattle-admin
+-- user@foodbattle.local  / foodbattle-user
+INSERT INTO users (email, nickname, password_hash, role) VALUES
+('admin@foodbattle.local', 'Admin',   crypt('foodbattle-admin', gen_salt('bf', 12)), 'admin'),
+('user@foodbattle.local',  'Testeur', crypt('foodbattle-user',  gen_salt('bf', 12)), 'user');

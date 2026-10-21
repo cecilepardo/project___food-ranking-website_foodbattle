@@ -6,6 +6,9 @@
  */
 
 return [
+    // 'dev' affiche les erreurs PHP dans la page. Valeur sûre par défaut : 'prod'.
+    'env' => getenv('APP_ENV') ?: 'prod',
+
     'db' => [
         'host'     => getenv('DB_HOST') ?: 'localhost',
         'port'     => getenv('DB_PORT') ?: '5432',

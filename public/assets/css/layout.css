@@ -23,9 +23,29 @@
     text-decoration: none;
 }
 
-.site-header__nav a {
+.site-header__nav a,
+.site-header__user,
+.site-header__logout-button {
     margin-left: 18px;
     color: var(--color-text-strong);
+}
+
+.site-header__user {
+    font-weight: bold;
+}
+
+/* La déconnexion est un formulaire POST (voir AuthController::logout) : on l'affiche comme un lien. */
+.site-header__logout {
+    display: inline;
+}
+
+.site-header__logout-button {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
 }
 
 
@@ -70,7 +90,9 @@
         margin-top: var(--space-md);
     }
 
-    .site-header__nav a {
+    .site-header__nav a,
+    .site-header__user,
+    .site-header__logout-button {
         margin: 0 12px 0 0;
     }
 }

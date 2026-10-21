@@ -20,8 +20,7 @@ abstract class Controller
 
     protected function redirect(string $url): never
     {
-        header('Location: ' . $url);
-        exit;
+        Response::redirect($url);
     }
 
     /**
@@ -29,8 +28,7 @@ abstract class Controller
      */
     protected function abort(int $statusCode, string $message): never
     {
-        http_response_code($statusCode);
-        exit($message);
+        Response::abort($statusCode, $message);
     }
 
     /**
