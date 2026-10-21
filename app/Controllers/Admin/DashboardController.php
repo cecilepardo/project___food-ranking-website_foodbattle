@@ -48,7 +48,7 @@ class DashboardController extends Controller
 
     private function showDashboard(?string $error = null): void
     {
-        $this->render('admin/dashboard', [
+        $this->render('admin-dashboard', [
             'title'          => 'Dashboard',
             'dishes'         => Dish::allWithEstablishment(),
             'establishments' => Establishment::all(),

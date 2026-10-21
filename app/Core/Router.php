@@ -77,6 +77,6 @@ class Router
     private function pageNotFound(): void
     {
         http_response_code(404);
-        echo View::render('errors/404', ['title' => 'Page introuvable']);
+        echo View::render('error-404', ['title' => 'Page introuvable']);
     }
 }

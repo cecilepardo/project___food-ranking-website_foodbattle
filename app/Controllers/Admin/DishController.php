@@ -53,7 +53,7 @@ class DishController extends Controller
 
     private function showForm(array $dish, ?string $error = null, bool $saved = false): void
     {
-        $this->render('admin/edit', [
+        $this->render('admin-edit', [
             'title' => 'Modifier un plat',
             'dish'  => $dish,
             'error' => $error,
@@ -66,7 +66,7 @@ class DishController extends Controller
         $dish = Dish::find($id);
 
         if ($dish === null) {
-            $this->render('errors/dish-not-found', ['title' => 'Modifier un plat', 'backLink' => false], 404);
+            $this->render('error-dish-not-found', ['title' => 'Modifier un plat', 'backLink' => false], 404);
             exit;
         }
 

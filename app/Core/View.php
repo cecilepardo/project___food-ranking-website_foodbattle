@@ -12,14 +12,14 @@ class View
     /**
      * Rend une vue, puis l'insère dans le layout principal.
      *
-     * Exemple : View::render('dish/show', ['dish' => $dish])
-     * => la vue app/Views/dish/show.php reçoit une variable $dish.
+     * Exemple : View::render('dish', ['dish' => $dish])
+     * => la vue app/Views/dish.php reçoit une variable $dish.
      */
     public static function render(string $view, array $data = []): string
     {
         $content = self::renderFile($view, $data);
 
-        return self::renderFile('layouts/main', $data + ['content' => $content]);
+        return self::renderFile('layout', $data + ['content' => $content]);
     }
 
     /**

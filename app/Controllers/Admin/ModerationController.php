@@ -16,7 +16,7 @@ class ModerationController extends Controller
 {
     public function index(): void
     {
-        $this->render('admin/moderation', [
+        $this->render('admin-moderation', [
             'title'   => 'Modération',
             'reviews' => Rating::allWithDish(),
         ]);

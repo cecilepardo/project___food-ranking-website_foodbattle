@@ -14,7 +14,7 @@ class RankingController extends Controller
 {
     public function index(): void
     {
-        $this->render('ranking/index', [
+        $this->render('ranking', [
             'title'  => 'Classement',
             'dishes' => Dish::ranking(10),
         ]);

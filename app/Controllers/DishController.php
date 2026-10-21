@@ -22,11 +22,11 @@ class DishController extends Controller
         $dish = Dish::findWithEstablishment($id);
 
         if ($dish === null) {
-            $this->render('errors/dish-not-found', ['title' => 'Le plat'], 404);
+            $this->render('error-dish-not-found', ['title' => 'Le plat'], 404);
             return;
         }
 
-        $this->render('dish/show', [
+        $this->render('dish', [
             'title'   => 'Le plat',
             'dish'    => $dish,
             'reviews' => Rating::publishedForDish($id),

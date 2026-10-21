@@ -20,7 +20,7 @@ config/routes.php       Liste des URL et du controller appelé pour chacune
 app/Core/               Routeur, rendu des vues, base de données, CSRF, helpers
 app/Models/             Requêtes SQL uniquement
 app/Controllers/        Lisent la requête, appellent les Models, choisissent la vue
-app/Views/              HTML uniquement (layouts/, partials/ et une dossier par page)
+app/Views/              HTML uniquement (layout.php, partials/ et un fichier par page)
 public/assets/css/      variables → base → layout → components → pages
 ```
 

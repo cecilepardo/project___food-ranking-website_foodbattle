@@ -19,7 +19,7 @@ class HomeController extends Controller
 
         $dishes = Dish::search($search, $this->categoryFilter($category));
 
-        $this->render('home/index', [
+        $this->render('home', [
             'title'      => 'Découvrir',
             'search'     => $search,
             'category'   => $category,
@@ -35,11 +35,6 @@ class HomeController extends Controller
     {
         if (!array_key_exists($category, Dish::CATEGORIES)) {
             return '';
-        }
-
-        // BUG connu : le filtre "tacos" affiche les burgers.
-        if ($category === 'tacos') {
-            return 'burger';
         }
 
         return $category;
