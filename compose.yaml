@@ -4,23 +4,23 @@ services:
     ports:
       - "127.0.0.1:${APP_PORT:-8081}:80"
     environment:
-      APP_ENV: ${APP_ENV:-dev}
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: foodbattle
       DB_USER: foodbattle
-      DB_PASSWORD: ${DB_PASSWORD:-foodbattle_local}
+      DB_PASSWORD: foodbattle_local
     volumes:
       - ./:/var/www/html
     depends_on:
       db:
         condition: service_healthy
+
   db:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: foodbattle
       POSTGRES_USER: foodbattle
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-foodbattle_local}
+      POSTGRES_PASSWORD: foodbattle_local
     volumes:
       - foodbattle_mvc_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
@@ -29,5 +29,6 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+
 volumes:
   foodbattle_mvc_data:

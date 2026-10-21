@@ -1,0 +1,76 @@
+/* ==========================================================================
+   LAYOUT
+   Grandes zones de la page : en-tête, contenu, pied de page.
+   ========================================================================== */
+
+
+/* En-tête
+   -------------------------------------------------------------------------- */
+
+.site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-lg) 5%;
+    background: var(--color-bg-surface);
+    border-bottom: 3px solid var(--color-primary-border);
+}
+
+.site-header__logo {
+    font-size: var(--font-size-logo);
+    font-weight: bold;
+    color: var(--color-text-strong);
+    text-decoration: none;
+}
+
+.site-header__nav a {
+    margin-left: 18px;
+    color: var(--color-text-strong);
+}
+
+
+/* Contenu principal
+   -------------------------------------------------------------------------- */
+
+.page {
+    max-width: var(--page-max-width);
+    min-height: 65vh;
+    margin: 25px auto;
+    padding: 0 var(--space-lg);
+}
+
+
+/* Pied de page
+   -------------------------------------------------------------------------- */
+
+.site-footer {
+    margin-top: 45px;
+    padding: 25px;
+    background: var(--color-bg-footer);
+    font-size: var(--font-size-base);
+    text-align: center;
+}
+
+.site-footer__note {
+    display: block;
+    margin-top: var(--space-sm);
+    color: var(--color-text-muted);
+}
+
+
+/* Mobile
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 700px) {
+    .site-header {
+        display: block;
+    }
+
+    .site-header__nav {
+        margin-top: var(--space-md);
+    }
+
+    .site-header__nav a {
+        margin: 0 12px 0 0;
+    }
+}

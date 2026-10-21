@@ -1,66 +1,7 @@
--- FoodBattle : schéma MVC avec contraintes d'intégrité.
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
-CREATE TABLE establishments (
-    id      SERIAL PRIMARY KEY,
-    name    VARCHAR(120) NOT NULL CHECK (length(trim(name)) > 0),
-    city    VARCHAR(80)  NOT NULL,
-    address TEXT         NOT NULL
-);
-
-CREATE TABLE dishes (
-    id               SERIAL PRIMARY KEY,
-    establishment_id INTEGER       NOT NULL REFERENCES establishments(id) ON DELETE RESTRICT,
-    name             VARCHAR(120)  NOT NULL CHECK (length(trim(name)) > 0),
-    category         VARCHAR(20)   NOT NULL CHECK (category IN ('burger', 'tacos', 'pizza')),
-    description      TEXT          NOT NULL DEFAULT '',
-    price            NUMERIC(8,2)  NOT NULL CHECK (price >= 0 AND price < 1000)
-);
-
-CREATE TABLE ratings (
-    id         SERIAL PRIMARY KEY,
-    dish_id    INTEGER     NOT NULL REFERENCES dishes(id) ON DELETE CASCADE,
-    nickname   VARCHAR(60) NOT NULL CHECK (length(trim(nickname)) > 0),
-    score      INTEGER     NOT NULL CHECK (score BETWEEN 1 AND 5),
-    comment    TEXT        NOT NULL CHECK (length(comment) BETWEEN 1 AND 1000),
-    status     VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'published', 'rejected')),
-    created_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE votes (
-    id          SERIAL PRIMARY KEY,
-    dish_id     INTEGER      NOT NULL REFERENCES dishes(id) ON DELETE CASCADE,
-    visitor_key VARCHAR(128) NOT NULL,
-    created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT votes_one_per_visitor UNIQUE (dish_id, visitor_key)
-);
-
-CREATE TABLE admins (
-    id            SERIAL PRIMARY KEY,
-    username      VARCHAR(60)  NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_dishes_establishment ON dishes(establishment_id);
-CREATE INDEX idx_ratings_dish_status  ON ratings(dish_id, status);
-CREATE INDEX idx_ratings_status       ON ratings(status);
-
--- Statistiques par plat : un seul endroit pour compter votes et moyenne (avis publiés uniquement).
-CREATE VIEW dish_stats AS
-SELECT d.id AS dish_id,
-       COALESCE(v.votes, 0)   AS votes,
-       r.average              AS average,
-       COALESCE(r.reviews, 0) AS reviews
-FROM dishes d
-LEFT JOIN (SELECT dish_id, COUNT(*) AS votes FROM votes GROUP BY dish_id) v ON v.dish_id = d.id
-LEFT JOIN (SELECT dish_id, ROUND(AVG(score), 1) AS average, COUNT(*) AS reviews
-           FROM ratings WHERE status = 'published' GROUP BY dish_id) r ON r.dish_id = d.id;
-
--- Compte admin local. Mot de passe à changer avant toute mise en ligne (voir README).
-INSERT INTO admins(username, password_hash) VALUES ('admin', crypt('foodbattle-admin', gen_salt('bf', 12)));
-
--- Données de démonstration (reprises du prototype).
+CREATE TABLE establishments (id SERIAL PRIMARY KEY, name VARCHAR(120) NOT NULL, city VARCHAR(80) NOT NULL, address TEXT NOT NULL);
+CREATE TABLE dishes (id SERIAL PRIMARY KEY, establishment_id INTEGER NOT NULL REFERENCES establishments(id), name VARCHAR(120) NOT NULL, category VARCHAR(20) NOT NULL, description TEXT NOT NULL DEFAULT '', price NUMERIC(8,2) NOT NULL);
+CREATE TABLE ratings (id SERIAL PRIMARY KEY, dish_id INTEGER NOT NULL REFERENCES dishes(id) ON DELETE CASCADE, nickname VARCHAR(60) NOT NULL, score INTEGER NOT NULL CHECK(score BETWEEN 1 AND 5), comment TEXT NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'published', created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE votes (id SERIAL PRIMARY KEY, dish_id INTEGER NOT NULL REFERENCES dishes(id) ON DELETE CASCADE, visitor_key VARCHAR(128) NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
 INSERT INTO establishments(name,city,address) VALUES
 ('Le Comptoir Smash','Lille','12 rue des Ateliers'),('Taco Tempo','Lille','8 place du Marché'),('Forno Club','Roubaix','24 rue des Tisserands'),('La Planque du Burger','Roubaix','5 rue du Canal'),('Tacos & Co','Tourcoing','17 avenue des Érables'),('Pizza Minuit','Lille','3 rue des Halles');
 INSERT INTO dishes(establishment_id,name,category,description,price) VALUES(1,'Le Double Smash','burger','Deux steaks, cheddar, pickles et sauce maison.',12.5);

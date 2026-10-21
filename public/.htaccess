@@ -1,3 +1,4 @@
+# Toute URL qui ne correspond pas à un vrai fichier (css, js, image) est envoyée à index.php
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

@@ -1,0 +1,75 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controllers\Admin;
+
+use App\Core\Controller;
+use App\Models\Dish;
+
+/**
+ * Modification d'un plat depuis le dashboard.
+ */
+class DishController extends Controller
+{
+    /**
+     * GET /dashboard/plats/{id}/modifier
+     */
+    public function edit(int $id): void
+    {
+        $dish = $this->findOrFail($id);
+
+        $this->showForm($dish);
+    }
+
+    /**
+     * POST /dashboard/plats/{id}/modifier
+     */
+    public function update(int $id): void
+    {
+        $dish = $this->findOrFail($id);
+        $this->checkCsrf();
+
+        $name  = trim($_POST['name'] ?? '');
+        $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT);
+
+        $isValid = $name !== ''
+            && strlen($name) <= 120
+            && $price !== false
+            && $price !== null
+            && $price >= 0;
+
+        if (!$isValid) {
+            $this->showForm($dish, error: 'Vérifie le nom et le prix.');
+            return;
+        }
+
+        // BUG connu : seul le nom est enregistré, le prix saisi est ignoré.
+        Dish::updateName($id, $name);
+        $dish['name'] = $name;
+
+        $this->showForm($dish, saved: true);
+    }
+
+    private function showForm(array $dish, ?string $error = null, bool $saved = false): void
+    {
+        $this->render('admin/edit', [
+            'title' => 'Modifier un plat',
+            'dish'  => $dish,
+            'error' => $error,
+            'saved' => $saved,
+        ]);
+    }
+
+    private function findOrFail(int $id): array
+    {
+        $dish = Dish::find($id);
+
+        if ($dish === null) {
+            $this->render('errors/dish-not-found', ['title' => 'Modifier un plat', 'backLink' => false], 404);
+            exit;
+        }
+
+        return $dish;
+    }
+}

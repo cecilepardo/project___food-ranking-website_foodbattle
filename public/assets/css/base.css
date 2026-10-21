@@ -1,0 +1,66 @@
+/* ==========================================================================
+   BASE
+   Styles par défaut des balises HTML (sans classe).
+   ========================================================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-family);
+    color: var(--color-text);
+    background: var(--color-bg-page);
+}
+
+
+/* Titres
+   -------------------------------------------------------------------------- */
+
+h1 {
+    font-size: var(--font-size-h1);
+}
+
+h2 {
+    margin-top: var(--space-xl);
+}
+
+
+/* Liens
+   -------------------------------------------------------------------------- */
+
+a {
+    color: var(--color-link);
+}
+
+
+/* Formulaires
+   -------------------------------------------------------------------------- */
+
+label {
+    display: block;
+    margin: var(--space-sm) 0;
+    font-size: var(--font-size-base);
+}
+
+input,
+select,
+textarea {
+    display: block;
+    max-width: 100%;
+    margin-top: var(--space-xs);
+    padding: 9px;
+    border: 1px solid var(--color-border-input);
+    border-radius: var(--radius-sm);
+    font: inherit;
+}
+
+textarea {
+    width: 440px;
+    height: 95px;
+}
+
+summary {
+    cursor: pointer;
+}

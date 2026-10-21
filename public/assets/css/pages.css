@@ -1,0 +1,106 @@
+/* ==========================================================================
+   PAGES
+   Styles propres à une seule page.
+   ========================================================================== */
+
+
+/* Accueil : bandeau d'introduction
+   -------------------------------------------------------------------------- */
+
+.hero {
+    margin-bottom: var(--space-xl);
+    padding: 35px 24px;
+    background: var(--color-bg-hero);
+}
+
+.hero__eyebrow {
+    font-size: var(--font-size-small);
+    color: var(--color-text-eyebrow);
+}
+
+.hero__title {
+    margin: 14px 0;
+    font-size: var(--font-size-hero);
+}
+
+.hero__text {
+    margin-bottom: 25px;
+}
+
+
+/* Accueil : barre de recherche
+   -------------------------------------------------------------------------- */
+
+.filters {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--color-bg-surface);
+}
+
+.filters input {
+    width: 300px;
+}
+
+.filters__submit {
+    margin-top: var(--space-lg);
+}
+
+
+/* Fiche plat
+   -------------------------------------------------------------------------- */
+
+.dish-detail {
+    display: flex;
+    gap: 25px;
+    padding: var(--space-lg);
+    background: var(--color-bg-surface);
+}
+
+.dish-detail__image {
+    width: 45%;
+    height: 330px;
+    object-fit: cover;
+}
+
+.review {
+    margin: var(--space-md) 0;
+    padding: var(--space-md);
+    background: var(--color-bg-surface);
+}
+
+
+/* Dashboard : sous-menu
+   -------------------------------------------------------------------------- */
+
+.subnav {
+    padding: var(--space-md);
+    background: var(--color-bg-surface);
+}
+
+.subnav a {
+    margin: 0 12px 0 0;
+}
+
+
+/* Mobile
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 700px) {
+    .filters {
+        flex-wrap: wrap;
+    }
+
+    .filters input {
+        width: 220px;
+    }
+
+    .dish-detail {
+        display: block;
+    }
+
+    .dish-detail__image {
+        width: 100%;
+    }
+}
