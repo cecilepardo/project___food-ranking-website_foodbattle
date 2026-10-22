@@ -30,7 +30,8 @@ class DishController extends Controller
             'title'   => 'Le plat',
             'dish'    => $dish,
             'reviews' => Rating::publishedForDish($id),
-            'saved'   => isset($_GET['ok']),
+            'saved'        => isset($_GET['ok']),
+            'alreadyVoted' => isset($_GET['deja']),
         ]);
     }
 
@@ -42,7 +43,9 @@ class DishController extends Controller
         $this->checkCsrf();
         $this->ensureDishExists($id);
 
-        Vote::create($id, session_id());
+        if (!Vote::create($id, session_id())) {
+            $this->redirect('/plat/' . $id . '?deja=1');
+        }
 
         $this->redirectToDish($id);
     }

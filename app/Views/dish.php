@@ -5,6 +5,7 @@
  * @var array $dish
  * @var array $reviews  Avis publiés
  * @var bool  $saved    true après un vote ou un avis
+ * @var bool  $alreadyVoted  true si le visiteur avait déjà voté
  */
 use App\Core\View;
 
@@ -34,6 +35,10 @@ $dishId = (int) $dish['id'];
 
 <?php if ($saved): ?>
     <p class="message" role="status">Merci, ta contribution a été enregistrée.</p>
+<?php endif; ?>
+
+<?php if ($alreadyVoted): ?>
+    <p class="message" role="status">Tu as déjà voté pour ce plat.</p>
 <?php endif; ?>
 
 <h2>Donner mon avis</h2>

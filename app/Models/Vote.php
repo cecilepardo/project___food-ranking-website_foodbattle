@@ -11,11 +11,13 @@ use App\Core\Database;
  */
 class Vote
 {
-    public static function create(int $dishId, string $visitorKey): void
+    public static function create(int $dishId, string $visitorKey): bool
     {
         $statement = Database::get()->prepare(
             'INSERT INTO votes (dish_id, visitor_key) VALUES (?, ?) ON CONFLICT DO NOTHING'
         );
         $statement->execute([$dishId, $visitorKey]);
+
+        return $statement->rowCount() > 0;
     }
 }
