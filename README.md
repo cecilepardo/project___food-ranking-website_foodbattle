@@ -19,7 +19,9 @@ Remettre la base à zéro : `docker compose down -v`, puis relancer.
 | admin | `admin@foodbattle.local` | `foodbattle-admin` |
 | user  | `user@foodbattle.local`  | `foodbattle-user`  |
 
-L'inscription (`/inscription`) crée toujours un compte `user` ; un admin ne se crée qu'en base.
+Connexion et inscription passent par la même page (`/connexion`) : on saisit son email, puis son mot de passe
+si le compte existe, sinon un pseudo et un mot de passe pour le créer. Un compte créé ainsi est toujours `user` ;
+un admin ne se crée qu'en base.
 
 ## Organisation
 

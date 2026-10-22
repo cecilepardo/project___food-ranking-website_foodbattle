@@ -20,12 +20,6 @@ class Auth
      */
     private const HASH_OPTIONS = ['cost' => 12];
 
-    /**
-     * Hash bcrypt d'un mot de passe quelconque, utilisé quand l'email n'existe pas
-     * (voir attempt()). Sa valeur n'a aucune importance, seul son coût compte.
-     */
-    private const DUMMY_HASH = '$2y$12$DDWrq.E4MdEU6AougvkiauRaC8pjjiOurvq9emi01/VDmEnb7BbOu';
-
     public static function hashPassword(string $password): string
     {
         return password_hash($password, PASSWORD_DEFAULT, self::HASH_OPTIONS);
@@ -39,14 +33,7 @@ class Auth
     {
         $user = User::findByEmail($email);
 
-        if ($user === null) {
-            // On vérifie quand même un hash pour que la réponse prenne le même temps
-            // qu'avec un email existant : un attaquant ne peut pas deviner qui est inscrit.
-            password_verify($password, self::DUMMY_HASH);
-            return null;
-        }
-
-        if (!password_verify($password, $user['password_hash'])) {
+        if ($user === null || !password_verify($password, $user['password_hash'])) {
             return null;
         }
 

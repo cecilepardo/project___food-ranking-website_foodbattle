@@ -1,12 +1,14 @@
 <?php
 /**
- * Formulaire de connexion.
+ * Connexion, étape 1 : saisie de l'email.
  *
  * @var string      $email  Email saisi, réaffiché après une erreur
  * @var string|null $error
  */
 ?>
 <h1>Connexion</h1>
+
+<p>Saisis ton email : on te connecte si tu as déjà un compte, sinon on t'aide à en créer un.</p>
 
 <?php if ($error): ?>
     <p role="alert"><?= e($error) ?></p>
@@ -20,12 +22,5 @@
         <input name="email" type="email" value="<?= e($email) ?>" maxlength="254" autocomplete="email" required autofocus>
     </label>
 
-    <label>
-        Mot de passe
-        <input name="password" type="password" autocomplete="current-password" required>
-    </label>
-
-    <button class="btn">Se connecter</button>
+    <button class="btn">Continuer</button>
 </form>
-
-<p>Pas encore de compte ? <a href="/inscription">Inscris-toi</a></p>
