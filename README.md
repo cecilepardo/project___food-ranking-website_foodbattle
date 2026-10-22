@@ -23,12 +23,20 @@ Connexion et inscription passent par la même page (`/connexion`) : on saisit so
 si le compte existe, sinon un pseudo et un mot de passe pour le créer. Un compte créé ainsi est toujours `user` ;
 un admin ne se crée qu'en base.
 
+### Limitation des tentatives (anti brute-force)
+
+- **Par adresse IP** : 20 formulaires de connexion/inscription envoyés en 15 min, puis blocage (`ThrottleAuth`).
+- **Par compte** : 5 mots de passe faux en 15 min, puis blocage du compte (le bon mot de passe est aussi refusé).
+
+En local, toutes les requêtes arrivent avec la même IP (passerelle Docker) : en cas de blocage pendant les tests,
+`docker compose exec db psql -U foodbattle -c "DELETE FROM rate_limit_hits;"`
+
 ## Organisation
 
 ```
 public/index.php        Point d'entrée unique : toutes les URL passent ici
 config/routes.php       Liste des URL et du controller appelé pour chacune
-app/Core/               Routeur, rendu des vues, base de données, CSRF, helpers
+app/Core/               Routeur, rendu des vues, base de données, CSRF, authentification, limiteur de tentatives, helpers
 app/Models/             Requêtes SQL uniquement
 app/Controllers/        Lisent la requête, appellent les Models, choisissent la vue
 app/Middlewares/        Vérifications exécutées par le routeur avant le controller (ex. RequireAdmin)

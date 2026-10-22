@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Controller;
+use App\Core\RateLimiter;
 use App\Models\User;
 
 /**
@@ -23,6 +24,10 @@ class AuthController extends Controller
     private const PASSWORD_MIN_LENGTH = 8;
     // bcrypt ignore tout ce qui dépasse 72 octets : on refuse plutôt que de tronquer en silence.
     private const PASSWORD_MAX_BYTES  = 72;
+
+    // Mots de passe faux tolérés par compte avant blocage temporaire.
+    private const LOGIN_MAX_FAILURES   = 5;
+    private const LOGIN_WINDOW_SECONDS = 900; // 15 minutes
 
     /**
      * GET /connexion
@@ -67,13 +72,31 @@ class AuthController extends Controller
         $email    = $this->normalizeEmail($this->postString('email'));
         $password = $this->postString('password');
 
+        // L'email vient d'un champ caché : on le valide avant de s'en servir comme clé de comptage.
+        if (!$this->isValidEmail($email)) {
+            $this->showEmailForm($email, 'Saisis une adresse email valide.');
+            return;
+        }
+
+        // Compteur par compte : freine une attaque sur un même compte, même répartie sur plusieurs IP.
+        $throttleKey = 'login:' . $email;
+
+        if (RateLimiter::tooManyAttempts($throttleKey, self::LOGIN_MAX_FAILURES, self::LOGIN_WINDOW_SECONDS)) {
+            $minutes = (int) ceil(RateLimiter::availableIn($throttleKey, self::LOGIN_WINDOW_SECONDS) / 60);
+            $this->showPasswordForm($email, "Trop de mots de passe incorrects. Réessaie dans $minutes minute(s).", 429);
+            return;
+        }
+
         $user = Auth::attempt($email, $password);
 
         if ($user === null) {
+            RateLimiter::hit($throttleKey);
             $this->showPasswordForm($email, 'Mot de passe incorrect.');
             return;
         }
 
+        // Connexion réussie : les échecs précédents ne comptent plus.
+        RateLimiter::clear($throttleKey);
         Auth::login($user);
 
         $this->redirect($user['role'] === 'admin' ? '/dashboard' : '/');
@@ -176,13 +199,13 @@ class AuthController extends Controller
         ]);
     }
 
-    private function showPasswordForm(string $email, ?string $error = null): void
+    private function showPasswordForm(string $email, ?string $error = null, int $statusCode = 200): void
     {
         $this->render('login-password', [
             'title' => 'Connexion',
             'email' => $email,
             'error' => $error,
-        ]);
+        ], $statusCode);
     }
 
     private function showRegisterForm(string $email, string $nickname = '', ?string $error = null): void
