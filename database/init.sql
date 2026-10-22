@@ -24,6 +24,17 @@ CREATE TABLE users (
 -- tout en gardant à l'affichage la casse choisie par l'utilisateur.
 CREATE UNIQUE INDEX users_nickname_unique ON users (lower(nickname));
 
+-- Tentatives horodatées, pour limiter le brute-force (voir App\Core\RateLimiter).
+-- "key" désigne ce qu'on compte : 'auth-ip:<adresse IP>' ou 'login:<email>'.
+CREATE TABLE rate_limit_hits (
+    id     SERIAL PRIMARY KEY,
+    key    VARCHAR(300) NOT NULL,
+    hit_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Chaque requête filtre sur une clé et une période : cet index les rend rapides.
+CREATE INDEX rate_limit_hits_key_hit_at ON rate_limit_hits (key, hit_at);
+
 INSERT INTO establishments(name,city,address) VALUES
 ('Le Comptoir Smash','Lille','12 rue des Ateliers'),('Taco Tempo','Lille','8 place du Marché'),('Forno Club','Roubaix','24 rue des Tisserands'),('La Planque du Burger','Roubaix','5 rue du Canal'),('Tacos & Co','Tourcoing','17 avenue des Érables'),('Pizza Minuit','Lille','3 rue des Halles');
 INSERT INTO dishes(establishment_id,name,category,description,price) VALUES(1,'Le Double Smash','burger','Deux steaks, cheddar, pickles et sauce maison.',12.5);

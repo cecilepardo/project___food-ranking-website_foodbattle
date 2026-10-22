@@ -15,6 +15,7 @@ use App\Controllers\HomeController;
 use App\Controllers\RankingController;
 use App\Core\Router;
 use App\Middlewares\RequireAdmin;
+use App\Middlewares\ThrottleAuth;
 
 return function (Router $router): void {
 
@@ -29,11 +30,16 @@ return function (Router $router): void {
 
     // Authentification
     // Une seule page en deux étapes : l'email, puis le mot de passe ou l'inscription.
-    $router->get('/connexion',               [AuthController::class, 'emailForm']);   // étape 1
-    $router->post('/connexion',              [AuthController::class, 'checkEmail']);  // choisit l'étape 2
-    $router->post('/connexion/mot-de-passe', [AuthController::class, 'login']);       // étape 2a
-    $router->post('/connexion/inscription',  [AuthController::class, 'register']);    // étape 2b
-    $router->post('/deconnexion',            [AuthController::class, 'logout']);
+    $router->get('/connexion', [AuthController::class, 'emailForm']); // étape 1
+
+    // Formulaires envoyés : limités par adresse IP (anti brute-force et anti-énumération des emails).
+    $router->group([ThrottleAuth::class], function (Router $router): void {
+        $router->post('/connexion',              [AuthController::class, 'checkEmail']);  // choisit l'étape 2
+        $router->post('/connexion/mot-de-passe', [AuthController::class, 'login']);       // étape 2a
+        $router->post('/connexion/inscription',  [AuthController::class, 'register']);    // étape 2b
+    });
+
+    $router->post('/deconnexion', [AuthController::class, 'logout']);
 
     // Administration : chaque route de ce groupe passe d'abord par RequireAdmin.
     // Toute nouvelle page d'administration doit être déclarée DANS ce groupe.
