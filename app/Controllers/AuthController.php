@@ -9,7 +9,12 @@ use App\Core\Controller;
 use App\Models\User;
 
 /**
- * Connexion, inscription et déconnexion.
+ * Connexion et inscription sur une seule page, en deux étapes :
+ * 1. l'utilisateur saisit son email ;
+ * 2. s'il a un compte, on lui demande son mot de passe ; sinon, on lui propose d'en créer un.
+ *
+ * L'email passe d'une étape à l'autre dans un champ caché, modifiable par le navigateur :
+ * chaque étape revalide donc tout ce qu'elle reçoit.
  */
 class AuthController extends Controller
 {
@@ -21,14 +26,39 @@ class AuthController extends Controller
 
     /**
      * GET /connexion
+     * Étape 1 : saisie de l'email.
      */
-    public function loginForm(): void
+    public function emailForm(): void
     {
-        $this->showLoginForm();
+        $this->showEmailForm();
     }
 
     /**
      * POST /connexion
+     * Choisit l'étape 2 : mot de passe si l'email a un compte, inscription sinon.
+     */
+    public function checkEmail(): void
+    {
+        $this->checkCsrf();
+
+        $email = $this->normalizeEmail($this->postString('email'));
+
+        if (!$this->isValidEmail($email)) {
+            $this->showEmailForm($email, 'Saisis une adresse email valide.');
+            return;
+        }
+
+        if (User::emailExists($email)) {
+            $this->showPasswordForm($email);
+            return;
+        }
+
+        $this->showRegisterForm($email);
+    }
+
+    /**
+     * POST /connexion/mot-de-passe
+     * Étape 2a : vérification du mot de passe.
      */
     public function login(): void
     {
@@ -40,8 +70,7 @@ class AuthController extends Controller
         $user = Auth::attempt($email, $password);
 
         if ($user === null) {
-            // Message volontairement vague : on ne dit pas si c'est l'email ou le mot de passe qui est faux.
-            $this->showLoginForm($email, 'Email ou mot de passe incorrect.');
+            $this->showPasswordForm($email, 'Mot de passe incorrect.');
             return;
         }
 
@@ -51,15 +80,8 @@ class AuthController extends Controller
     }
 
     /**
-     * GET /inscription
-     */
-    public function registerForm(): void
-    {
-        $this->showRegisterForm();
-    }
-
-    /**
-     * POST /inscription
+     * POST /connexion/inscription
+     * Étape 2b : création du compte.
      */
     public function register(): void
     {
@@ -98,10 +120,11 @@ class AuthController extends Controller
 
     /**
      * Premier problème trouvé dans le formulaire d'inscription, ou null si tout est valide.
+     * L'email est revérifié : il vient d'un champ caché et a pu être modifié depuis l'étape 1.
      */
     private function registrationError(string $email, string $nickname, string $password): ?string
     {
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > self::EMAIL_MAX_LENGTH) {
+        if (!$this->isValidEmail($email)) {
             return 'Saisis une adresse email valide.';
         }
         if ($nickname === '' || mb_strlen($nickname) > self::NICKNAME_MAX_LENGTH) {
@@ -118,6 +141,12 @@ class AuthController extends Controller
         }
 
         return null;
+    }
+
+    private function isValidEmail(string $email): bool
+    {
+        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false
+            && strlen($email) <= self::EMAIL_MAX_LENGTH;
     }
 
     /**
@@ -138,19 +167,28 @@ class AuthController extends Controller
         return strtolower(trim($email));
     }
 
-    private function showLoginForm(string $email = '', ?string $error = null): void
+    private function showEmailForm(string $email = '', ?string $error = null): void
     {
-        $this->render('login', [
+        $this->render('login-email', [
             'title' => 'Connexion',
             'email' => $email,
             'error' => $error,
         ]);
     }
 
-    private function showRegisterForm(string $email = '', string $nickname = '', ?string $error = null): void
+    private function showPasswordForm(string $email, ?string $error = null): void
     {
-        $this->render('register', [
-            'title'    => 'Inscription',
+        $this->render('login-password', [
+            'title' => 'Connexion',
+            'email' => $email,
+            'error' => $error,
+        ]);
+    }
+
+    private function showRegisterForm(string $email, string $nickname = '', ?string $error = null): void
+    {
+        $this->render('login-register', [
+            'title'    => 'Créer un compte',
             'email'    => $email,
             'nickname' => $nickname,
             'error'    => $error,

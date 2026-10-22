@@ -18,7 +18,6 @@ $user = \App\Core\Auth::user();
 
         <?php if ($user === null): ?>
             <a href="/connexion">Connexion</a>
-            <a href="/inscription">Inscription</a>
         <?php else: ?>
             <span class="site-header__user"><?= e($user['nickname']) ?></span>
             <form class="site-header__logout" method="post" action="/deconnexion">
