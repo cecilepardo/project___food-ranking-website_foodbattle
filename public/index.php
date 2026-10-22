@@ -34,6 +34,9 @@ $config = require APP_ROOT . '/config/config.php';
 // Elle reste visible dans les logs : docker compose logs app
 ini_set('display_errors', $config['env'] === 'dev' ? '1' : '0');
 
+array_walk_recursive($_GET, 'reject_invalid_utf8');
+array_walk_recursive($_POST, 'reject_invalid_utf8');
+
 // Cookie de session : illisible par JavaScript (httponly), pas envoyé par les autres sites
 // lors d'un POST (samesite), et transmis uniquement en HTTPS quand le site est en HTTPS (secure).
 session_set_cookie_params([

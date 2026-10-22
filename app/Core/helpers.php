@@ -52,3 +52,11 @@ function image_for(string $category): string
 
     return "https://images.pexels.com/photos/{$id}/pexels-photo-{$id}.jpeg?auto=compress&cs=tinysrgb&w=800";
 }
+
+function reject_invalid_utf8(mixed $value): void
+{
+    if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
+        http_response_code(400);
+        exit('Requête invalide : encodage non reconnu.');
+    }
+}
