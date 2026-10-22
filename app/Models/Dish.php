@@ -91,7 +91,6 @@ class Dish
      */
     public static function ranking(int $limit = 10): array
     {
-        // BUG connu : "ORDER BY votes ASC" met en tête les plats les MOINS votés.
         $statement = Database::get()->prepare(
             'SELECT d.id,
                     d.name,
@@ -101,7 +100,7 @@ class Dish
                     (SELECT AVG(score) FROM ratings WHERE dish_id = d.id) AS average
              FROM dishes d
              JOIN establishments e ON e.id = d.establishment_id
-             ORDER BY votes ASC, d.id
+             ORDER BY votes DESC, d.id
              LIMIT ?'
         );
         $statement->execute([$limit]);
@@ -132,9 +131,9 @@ class Dish
         $statement->execute([$establishmentId, $name, $category, $description, $price]);
     }
 
-    public static function updateName(int $id, string $name): void
+    public static function update(int $id, string $name, float $price): void
     {
-        $statement = Database::get()->prepare('UPDATE dishes SET name = ? WHERE id = ?');
-        $statement->execute([$name, $id]);
+        $statement = Database::get()->prepare('UPDATE dishes SET name = ?, price = ? WHERE id = ?');
+        $statement->execute([$name, $price, $id]);
     }
 }

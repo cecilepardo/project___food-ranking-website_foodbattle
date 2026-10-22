@@ -44,9 +44,9 @@ class DishController extends Controller
             return;
         }
 
-        // BUG connu : seul le nom est enregistré, le prix saisi est ignoré.
-        Dish::updateName($id, $name);
-        $dish['name'] = $name;
+        Dish::update($id, $name, $price);
+        $dish['name']  = $name;
+        $dish['price'] = $price;
 
         $this->showForm($dish, saved: true);
     }
