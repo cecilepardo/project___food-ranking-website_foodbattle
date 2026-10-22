@@ -15,6 +15,7 @@ use App\Controllers\HomeController;
 use App\Controllers\RankingController;
 use App\Core\Router;
 use App\Middlewares\RequireAdmin;
+use App\Middlewares\RequireGuest;
 use App\Middlewares\ThrottleAuth;
 
 return function (Router $router): void {
@@ -30,13 +31,16 @@ return function (Router $router): void {
 
     // Authentification
     // Une seule page en deux étapes : l'email, puis le mot de passe ou l'inscription.
-    $router->get('/connexion', [AuthController::class, 'emailForm']); // étape 1
+    // Réservée aux visiteurs non connectés : un utilisateur connecté est renvoyé vers son accueil.
+    $router->group([RequireGuest::class], function (Router $router): void {
+        $router->get('/connexion', [AuthController::class, 'emailForm']); // étape 1
 
-    // Formulaires envoyés : limités par adresse IP (anti brute-force et anti-énumération des emails).
-    $router->group([ThrottleAuth::class], function (Router $router): void {
-        $router->post('/connexion',              [AuthController::class, 'checkEmail']);  // choisit l'étape 2
-        $router->post('/connexion/mot-de-passe', [AuthController::class, 'login']);       // étape 2a
-        $router->post('/connexion/inscription',  [AuthController::class, 'register']);    // étape 2b
+        // Formulaires envoyés : limités par adresse IP (anti brute-force et anti-énumération des emails).
+        $router->group([ThrottleAuth::class], function (Router $router): void {
+            $router->post('/connexion',              [AuthController::class, 'checkEmail']);  // choisit l'étape 2
+            $router->post('/connexion/mot-de-passe', [AuthController::class, 'login']);       // étape 2a
+            $router->post('/connexion/inscription',  [AuthController::class, 'register']);    // étape 2b
+        });
     });
 
     $router->post('/deconnexion', [AuthController::class, 'logout']);

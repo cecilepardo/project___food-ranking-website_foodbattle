@@ -99,7 +99,7 @@ class AuthController extends Controller
         RateLimiter::clear($throttleKey);
         Auth::login($user);
 
-        $this->redirect($user['role'] === 'admin' ? '/dashboard' : '/');
+        $this->redirectAfterLogin();
     }
 
     /**
@@ -126,7 +126,7 @@ class AuthController extends Controller
         // Connexion directe après l'inscription : le compte vient d'être créé avec le rôle par défaut.
         Auth::login(['id' => $userId, 'nickname' => $nickname, 'role' => 'user']);
 
-        $this->redirect('/');
+        $this->redirectAfterLogin();
     }
 
     /**
@@ -139,6 +139,15 @@ class AuthController extends Controller
         Auth::logout();
 
         $this->redirect('/');
+    }
+
+    /**
+     * Après une connexion ou une inscription : la page demandée avant la connexion,
+     * sinon l'accueil correspondant au rôle.
+     */
+    private function redirectAfterLogin(): never
+    {
+        $this->redirect(Auth::pullIntendedUrl() ?? Auth::homeUrl());
     }
 
     /**

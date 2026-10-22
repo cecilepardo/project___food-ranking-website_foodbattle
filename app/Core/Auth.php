@@ -14,6 +14,9 @@ class Auth
     /** Clé de $_SESSION qui contient l'utilisateur connecté. */
     private const SESSION_KEY = 'user';
 
+    /** Clé de $_SESSION qui contient la page demandée avant la connexion. */
+    private const INTENDED_KEY = 'intended_url';
+
     /**
      * Coût bcrypt fixé explicitement : PHP 8.3 utilise 10 par défaut,
      * on garde 12 comme les comptes de seed (gen_salt('bf', 12)).
@@ -85,6 +88,36 @@ class Auth
     }
 
     /**
+     * Page d'accueil selon le rôle : le dashboard pour un admin, la carte pour les autres.
+     */
+    public static function homeUrl(): string
+    {
+        return self::isAdmin() ? '/dashboard' : '/';
+    }
+
+    /**
+     * Mémorise la page demandée par un visiteur, pour l'y renvoyer après sa connexion.
+     * Seul un chemin du site est accepté (voir isLocalPath()).
+     */
+    public static function rememberIntendedUrl(string $url): void
+    {
+        if (self::isLocalPath($url)) {
+            $_SESSION[self::INTENDED_KEY] = $url;
+        }
+    }
+
+    /**
+     * Page mémorisée, ou null s'il n'y en a pas. Elle est oubliée aussitôt : elle ne sert qu'une fois.
+     */
+    public static function pullIntendedUrl(): ?string
+    {
+        $url = $_SESSION[self::INTENDED_KEY] ?? null;
+        unset($_SESSION[self::INTENDED_KEY]);
+
+        return $url;
+    }
+
+    /**
      * Recalcule le hash si l'algorithme ou le coût recommandés ont changé
      * (ex. hash $2a$ des comptes de seed => $2y$ produit par PHP).
      */
@@ -93,5 +126,16 @@ class Auth
         if (password_needs_rehash($hash, PASSWORD_DEFAULT, self::HASH_OPTIONS)) {
             User::updatePasswordHash($userId, self::hashPassword($password));
         }
+    }
+
+    /**
+     * Vrai pour un chemin du site ("/moderation?page=2"), faux pour tout ce qui mènerait ailleurs :
+     * les navigateurs lisent "//pirate.com" et "/\pirate.com" comme l'adresse d'un autre site.
+     */
+    private static function isLocalPath(string $url): bool
+    {
+        return str_starts_with($url, '/')
+            && !str_starts_with($url, '//')
+            && !str_starts_with($url, '/\\');
     }
 }
