@@ -70,10 +70,10 @@ class DishController extends Controller
 
     private function isValidRating(mixed $score, string $nickname, string $comment): bool
     {
-        // BUG connu : les limites (240 et 4000) ne correspondent pas à celles du formulaire (60 et 1000).
+
         $scoreIsValid    = is_int($score) && $score >= 1 && $score <= 5;
-        $nicknameIsValid = $nickname !== '' && strlen($nickname) <= 240;
-        $commentIsValid  = $comment !== '' && strlen($comment) <= 4000;
+        $nicknameIsValid = $nickname !== '' && mb_strlen($nickname) <= 60;
+        $commentIsValid  = $comment !== '' && mb_strlen($comment) <= 1000;
 
         return $scoreIsValid && $nicknameIsValid && $commentIsValid;
     }

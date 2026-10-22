@@ -68,8 +68,7 @@ $dishId = (int) $dish['id'];
 <?php foreach ($reviews as $review): ?>
     <article class="review">
         <b><?= e($review['nickname']) ?> · <?= (int) $review['score'] ?>/5</b>
-        <?php /* BUG connu (faille XSS) : le commentaire est affiché sans e(). */ ?>
-        <p><?= $review['comment'] ?></p>
+        <p><?= e($review['comment']) ?></p>
     </article>
 <?php endforeach; ?>
 
