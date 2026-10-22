@@ -28,6 +28,21 @@ spl_autoload_register(function (string $class): void {
 
 require APP_ROOT . '/app/Core/helpers.php';
 
+$config = require APP_ROOT . '/config/config.php';
+
+// En production, une erreur ne doit jamais montrer au visiteur des chemins ou du code.
+// Elle reste visible dans les logs : docker compose logs app
+ini_set('display_errors', $config['env'] === 'dev' ? '1' : '0');
+
+// Cookie de session : illisible par JavaScript (httponly), pas envoyé par les autres sites
+// lors d'un POST (samesite), et transmis uniquement en HTTPS quand le site est en HTTPS (secure).
+session_set_cookie_params([
+    'httponly' => true,
+    'samesite' => 'Lax',
+    'secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
+// Refuse un identifiant de session inventé par le navigateur (complète session_regenerate_id).
+ini_set('session.use_strict_mode', '1');
 session_start();
 
 $router = new Router();

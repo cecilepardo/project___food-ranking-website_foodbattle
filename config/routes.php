@@ -9,10 +9,12 @@
 use App\Controllers\Admin\DashboardController;
 use App\Controllers\Admin\DishController as AdminDishController;
 use App\Controllers\Admin\ModerationController;
+use App\Controllers\AuthController;
 use App\Controllers\DishController;
 use App\Controllers\HomeController;
 use App\Controllers\RankingController;
 use App\Core\Router;
+use App\Middlewares\RequireAdmin;
 
 return function (Router $router): void {
 
@@ -25,10 +27,20 @@ return function (Router $router): void {
     $router->post('/plat/{id}/vote', [DishController::class, 'vote']);
     $router->post('/plat/{id}/avis', [DishController::class, 'rate']);
 
-    // Administration
-    $router->get('/dashboard',                        [DashboardController::class, 'index']);  // ancien dashboard.php
-    $router->post('/dashboard/plats',                 [DashboardController::class, 'store']);
-    $router->get('/dashboard/plats/{id}/modifier',    [AdminDishController::class, 'edit']);   // ancien modifier.php
-    $router->post('/dashboard/plats/{id}/modifier',   [AdminDishController::class, 'update']);
-    $router->get('/moderation',                       [ModerationController::class, 'index']); // ancien moderation.php
+    // Authentification
+    $router->get('/connexion',    [AuthController::class, 'loginForm']);
+    $router->post('/connexion',   [AuthController::class, 'login']);
+    $router->get('/inscription',  [AuthController::class, 'registerForm']);
+    $router->post('/inscription', [AuthController::class, 'register']);
+    $router->post('/deconnexion', [AuthController::class, 'logout']);
+
+    // Administration : chaque route de ce groupe passe d'abord par RequireAdmin.
+    // Toute nouvelle page d'administration doit être déclarée DANS ce groupe.
+    $router->group([RequireAdmin::class], function (Router $router): void {
+        $router->get('/dashboard',                        [DashboardController::class, 'index']);  // ancien dashboard.php
+        $router->post('/dashboard/plats',                 [DashboardController::class, 'store']);
+        $router->get('/dashboard/plats/{id}/modifier',    [AdminDishController::class, 'edit']);   // ancien modifier.php
+        $router->post('/dashboard/plats/{id}/modifier',   [AdminDishController::class, 'update']);
+        $router->get('/moderation',                       [ModerationController::class, 'index']); // ancien moderation.php
+    });
 };
