@@ -23,6 +23,9 @@ Connexion et inscription passent par la même page (`/connexion`) : on saisit so
 si le compte existe, sinon un pseudo et un mot de passe pour le créer. Un compte créé ainsi est toujours `user` ;
 un admin ne se crée qu'en base.
 
+Après connexion, on revient sur la page demandée (ex. `/moderation`), sinon sur `/dashboard` (admin) ou `/` (user).
+Un utilisateur déjà connecté qui ouvre `/connexion` est renvoyé vers cet accueil (`RequireGuest`).
+
 ### Limitation des tentatives (anti brute-force)
 
 - **Par adresse IP** : 20 formulaires de connexion/inscription envoyés en 15 min, puis blocage (`ThrottleAuth`).
