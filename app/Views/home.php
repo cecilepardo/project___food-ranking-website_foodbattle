@@ -21,7 +21,7 @@ use App\Core\View;
 <form class="filters" method="get" action="/">
     <label>
         Rechercher
-        <input name="q" value="<?= e($search) ?>" placeholder="Un plat ou un établissement">
+        <input name="q" value="<?= e($search) ?>" maxlength="100" placeholder="Un plat ou un établissement">
     </label>
 
     <label>

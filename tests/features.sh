@@ -169,6 +169,47 @@ req za POST /dashboard/plats/1/modifier --data "token=$t&name[]=x&price=10"
 check "modification de plat avec name[] => message de validation, pas d'erreur PHP" bash -c 'grep -q "Vérifie le nom et le prix." <<<"$1" && ! grep -q Uncaught <<<"$1"' _ "$BODY"
 sql "DELETE FROM dishes WHERE name = 'Tableau$RUN'" >/dev/null
 
+section "Format du pseudo"
+# Valeurs déjà encodées en UTF-8 (voir tests/README.md, « Écrire un test portable »).
+signup() {  # signup JAR PSEUDO_ENCODE : tente une inscription avec ce pseudo
+    req "$1" GET /connexion; local t; t=$(token)
+    req "$1" POST /connexion --data "token=$t&email=fmt-$RUN-$1%40test.fr"; t=$(token)
+    req "$1" POST /connexion/inscription --data "token=$t&email=fmt-$RUN-$1%40test.fr&nickname=$2&password=motdepasse"
+}
+signup n1 '%E2%80%8B';                   check "pseudo = espace invisible (U+200B) => refusé" has 'Pseudo invalide'
+signup n2 '%D0%90dmin';                  check "pseudo « Аdmin » avec un A cyrillique => refusé" has 'Pseudo invalide'
+signup n3 'Bob%0ATesteur';               check "pseudo avec retour à la ligne => refusé" has 'Pseudo invalide'
+signup n4 '%F0%9F%8D%94%F0%9F%8D%94%F0%9F%8D%94'; check "pseudo en emojis => refusé" has 'Pseudo invalide'
+signup n5 'Ab';                          check "pseudo de 2 caractères => refusé" has 'Pseudo invalide'
+signup n6 'Le%20%20Gourmet';             check "pseudo avec deux espaces de suite => refusé" has 'Pseudo invalide'
+signup n7 'ADMIN';                       check "pseudo réservé « ADMIN » => refusé" has 'Ce pseudo est réservé.'
+signup n8 'Compte%20d%C3%A9sactiv%C3%A9'; check "pseudo réservé « Compte désactivé » => refusé" has 'Ce pseudo est réservé.'
+signup n9 "%C3%89lo%C3%AFse_$RUN"
+check "pseudo « Éloïse_… » (accents, tiret bas) => accepté" [ "$CODE" = 302 ]
+signup n10 "Le%20Gourmet%20$RUN"
+check "pseudo « Le Gourmet … » (espaces simples) => accepté" [ "$CODE" = 302 ]
+
+# Nouvelle section : les 10 inscriptions ci-dessus font 20 envois depuis la même IP, la limite de ThrottleAuth.
+section "Format des avis et de la recherche"
+new_account f
+req f GET /plat/7; t=$(token)
+req f POST /plat/7/avis --data-urlencode "token=$t" --data "score=4&comment=%E2%80%8B"
+check "avis composé d'un seul caractère invisible => refusé (422)" [ "$CODE" = 422 ]
+req f POST /plat/7/avis --data-urlencode "token=$t" --data "score=4&comment=bon%07"
+check "avis avec un caractère de contrôle => refusé (422)" [ "$CODE" = 422 ]
+req f POST /plat/7/avis --data-urlencode "token=$t" --data "score=4&comment=Ligne%201%0ALigne%202"
+check "avis sur deux lignes => accepté" [ "$CODE" = 302 ]
+req s GET '/?q=%25'
+check "recherche « % » => cherchée comme un caractère (aucun plat)" hasnt 'href="/plat/'
+req s GET '/?q=_'
+check "recherche « _ » => cherchée comme un caractère (aucun plat)" hasnt 'href="/plat/'
+req s GET '/?q=Smash'
+check "recherche « Smash » => toujours fonctionnelle" has 'Le Double Smash'
+req s GET "/?q=$(printf 'x%.0s' {1..200})"
+check "recherche de 200 caractères => coupée à 100" \
+    bash -c 'grep -q "value=\"$(printf "x%.0s" {1..100})\"" <<<"$1" && ! grep -q "x\{101\}" <<<"$1"' _ "$BODY"
+sql "DELETE FROM users WHERE email LIKE 'fmt-$RUN-%@test.fr'" >/dev/null
+
 section "Moyennes affichées (constat)"
 # Plats dont la moyenne calculée sur tous les avis diffère de celle des seuls avis publiés.
 wrong=$(sql "SELECT COUNT(*) FROM (SELECT dish_id FROM ratings GROUP BY dish_id

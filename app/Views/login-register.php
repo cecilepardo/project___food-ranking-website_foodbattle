@@ -26,8 +26,8 @@
 
     <label>
         Pseudo
-        <input name="nickname" value="<?= e($nickname) ?>" maxlength="60" autocomplete="nickname" required autofocus>
-        <small>Affiché publiquement à la place de ton email.</small>
+        <input name="nickname" value="<?= e($nickname) ?>" minlength="3" maxlength="30" autocomplete="nickname" required autofocus>
+        <small>Affiché publiquement à la place de ton email. 3 à 30 caractères : lettres, chiffres, espace, « . », « - », « _ ».</small>
     </label>
 
     <label>
