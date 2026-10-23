@@ -22,6 +22,13 @@ Un script termine en erreur s'il y a au moins un ❌ : lancez-les avant chaque P
 - Ils supposent les comptes de démo du README principal.
 - Base en vrac après beaucoup d'essais : `docker compose down -v && docker compose up -d`.
 
+## Écrire un test portable (macOS, Linux, Windows)
+
+Sous Windows (Git Bash), `curl` convertit en Latin-1 les accents passés en argument, et le site
+les refuse (400, encodage invalide). Tout caractère non ASCII **envoyé au serveur** s'écrit donc
+déjà encodé en UTF-8, avec `--data` : `--data "name=Fum%C3%A9"` (« é » = `%C3%A9`).
+Même règle pour les requêtes `sql "…"` : pas d'accent dedans.
+
 ## Ajouter un test
 
 ```bash
