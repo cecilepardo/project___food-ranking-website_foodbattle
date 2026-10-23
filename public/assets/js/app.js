@@ -23,14 +23,13 @@ function setupImageFallbacks() {
 }
 
 /**
- * Bouton "Supprimer" du dashboard.
- * BUG connu : la suppression n'est pas implémentée, seul un message s'affiche.
+ * Formulaire "Supprimer" du dashboard : demande confirmation avant l'envoi.
  */
 function setupDeleteButtons() {
-    document.querySelectorAll('[data-delete]').forEach(function (button) {
-        button.addEventListener('click', function () {
-            if (confirm('Supprimer ce plat ?')) {
-                alert('Ce plat ne peut pas être supprimé pour le moment.');
+    document.querySelectorAll('form[data-delete]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!confirm('Supprimer ce plat ainsi que tous ses avis et votes ?')) {
+                event.preventDefault();
             }
         });
     });

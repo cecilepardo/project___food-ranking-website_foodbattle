@@ -136,4 +136,13 @@ class Dish
         $statement = Database::get()->prepare('UPDATE dishes SET name = ?, price = ? WHERE id = ?');
         $statement->execute([$name, $price, $id]);
     }
+
+    /**
+     * Supprime un plat. Ses avis et ses votes partent avec lui (ON DELETE CASCADE).
+     */
+    public static function delete(int $id): void
+    {
+        $statement = Database::get()->prepare('DELETE FROM dishes WHERE id = ?');
+        $statement->execute([$id]);
+    }
 }

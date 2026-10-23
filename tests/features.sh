@@ -103,6 +103,26 @@ req a POST /dashboard/plats/2/modifier --data-urlencode "token=$t" \
 check "admin modifie le prix => enregistré en base (11.90)" [ "$(sql "SELECT price FROM dishes WHERE id=2")" = 11.90 ]
 sql "UPDATE dishes SET price = $old_price WHERE id = 2" >/dev/null   # le nom n'a pas changé : seul le prix est restauré
 
+section "Suppression d'un plat (admin)"
+DEL=$(sql "INSERT INTO dishes(establishment_id,name,category,price) VALUES(1,'À supprimer $RUN','burger',5) RETURNING id" | head -1)
+sql "INSERT INTO votes(dish_id,user_id) SELECT $DEL, id FROM users WHERE email='user@foodbattle.local'" >/dev/null
+req u GET /dashboard; t=$(token)
+req u POST "/dashboard/plats/$DEL/supprimer" --data-urlencode "token=$t"
+check "user POST /supprimer => 403" [ "$CODE" = 403 ]
+req a POST "/dashboard/plats/$DEL/supprimer"
+check "admin sans jeton CSRF => 403" [ "$CODE" = 403 ]
+check "… le plat est toujours en base" [ "$(sql "SELECT COUNT(*) FROM dishes WHERE id=$DEL")" = 1 ]
+req a GET /dashboard; t=$(token)
+check "bouton Supprimer = formulaire POST vers /dashboard/plats/$DEL/supprimer" has "action=\"/dashboard/plats/$DEL/supprimer\""
+req a POST "/dashboard/plats/$DEL/supprimer" --data-urlencode "token=$t"
+check "admin supprime => 302 vers /dashboard?deleted=1" [ "$CODE" = 302 -a "$LOC" = "/dashboard?deleted=1" ]
+check "plat supprimé en base" [ "$(sql "SELECT COUNT(*) FROM dishes WHERE id=$DEL")" = 0 ]
+check "ses votes supprimés (ON DELETE CASCADE)" [ "$(sql "SELECT COUNT(*) FROM votes WHERE dish_id=$DEL")" = 0 ]
+req a GET "/dashboard?deleted=1"
+check "message « Le plat a été supprimé. » affiché" has 'Le plat a été supprimé.'
+req a POST "/dashboard/plats/999999/supprimer" --data-urlencode "token=$t"
+check "plat inexistant => 404" [ "$CODE" = 404 ]
+
 section "PR #7 — encodage UTF-8"
 req w GET '/?q=%FF'
 check "GET avec octet invalide (%FF) => 400" [ "$CODE" = 400 ]
