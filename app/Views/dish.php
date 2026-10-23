@@ -5,9 +5,10 @@
  * @var array      $dish
  * @var array      $reviews       Avis publiés
  * @var array|null $currentUser   Utilisateur connecté (id, nickname, role), null pour un visiteur
- * @var bool       $saved         true après un vote ou un avis
+ * @var bool       $saved         true après un vote
  * @var bool       $alreadyVoted  true si l'utilisateur avait déjà voté
  * @var bool       $alreadyRated  true si l'utilisateur avait déjà donné son avis
+ * @var bool       $ratingSent    true après un avis, en attente de modération
  */
 use App\Core\View;
 
@@ -49,6 +50,10 @@ $dishId = (int) $dish['id'];
 
 <?php if ($alreadyRated): ?>
     <p class="message" role="status">Tu as déjà donné ton avis sur ce plat.</p>
+<?php endif; ?>
+
+<?php if ($ratingSent): ?>
+    <p class="message" role="status">Merci, ton avis sera publié après validation par un modérateur.</p>
 <?php endif; ?>
 
 <h2>Donner mon avis</h2>

@@ -63,5 +63,7 @@ return function (Router $router): void {
         $router->post('/dashboard/plats/{id}/modifier',   [AdminDishController::class, 'update']);
         $router->post('/dashboard/plats/{id}/supprimer',  [AdminDishController::class, 'delete']);
         $router->get('/moderation',                       [ModerationController::class, 'index']); // ancien moderation.php
+        $router->post('/moderation/{id}/publier',         [ModerationController::class, 'publish']);
+        $router->post('/moderation/{id}/refuser',         [ModerationController::class, 'reject']);
     });
 };

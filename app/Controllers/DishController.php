@@ -36,6 +36,7 @@ class DishController extends Controller
             'saved'        => isset($_GET['ok']),
             'alreadyVoted' => isset($_GET['deja']),
             'alreadyRated' => isset($_GET['deja-avis']),
+            'ratingSent'   => isset($_GET['avis']),
         ]);
     }
 
@@ -85,7 +86,7 @@ class DishController extends Controller
             $this->redirect('/plat/' . $id . '?deja-avis=1');
         }
 
-        $this->redirectToDish($id);
+        $this->redirect('/plat/' . $id . '?avis=1');
     }
 
     private function isValidRating(mixed $score, string $comment): bool
