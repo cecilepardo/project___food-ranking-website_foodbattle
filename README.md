@@ -18,10 +18,16 @@ Remettre la base à zéro : `docker compose down -v`, puis relancer.
 |-------|--------------------------|--------------------|
 | admin | `admin@foodbattle.local` | `foodbattle-admin` |
 | user  | `user@foodbattle.local`  | `foodbattle-user`  |
+| user  | `gourmand1@foodbattle.local` … `gourmand38@foodbattle.local` | `foodbattle-demo` |
+
+Les 38 gourmands portent les votes et les avis de démonstration.
 
 Connexion et inscription passent par la même page (`/connexion`) : on saisit son email, puis son mot de passe
 si le compte existe, sinon un pseudo et un mot de passe pour le créer. Un compte créé ainsi est toujours `user` ;
 un admin ne se crée qu'en base.
+
+Voter et donner son avis demandent d'être connecté : un vote et un avis par compte et par plat,
+signés du pseudo du compte. L'avis d'un compte supprimé reste, affiché « Compte désactivé ».
 
 Après connexion, on revient sur la page demandée (ex. `/moderation`), sinon sur `/dashboard` (admin) ou `/` (user).
 Un utilisateur déjà connecté qui ouvre `/connexion` est renvoyé vers cet accueil (`RequireGuest`).

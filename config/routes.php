@@ -16,6 +16,7 @@ use App\Controllers\RankingController;
 use App\Core\Router;
 use App\Middlewares\RequireAdmin;
 use App\Middlewares\RequireGuest;
+use App\Middlewares\RequireLogin;
 use App\Middlewares\ThrottleAuth;
 
 return function (Router $router): void {
@@ -25,9 +26,13 @@ return function (Router $router): void {
     $router->get('/classement', [RankingController::class, 'index']);    // ancien classement.php
     $router->get('/plat/{id}',  [DishController::class, 'show']);        // ancien plat.php
 
-    // Actions des visiteurs (ancien action.php)
-    $router->post('/plat/{id}/vote', [DishController::class, 'vote']);
-    $router->post('/plat/{id}/avis', [DishController::class, 'rate']);
+    // Participer (voter, donner son avis) : réservé aux utilisateurs connectés.
+    // /participer est un lien GET : RequireLogin le mémorise, on revient donc sur le plat après la connexion.
+    $router->group([RequireLogin::class], function (Router $router): void {
+        $router->get('/plat/{id}/participer', [DishController::class, 'participate']);
+        $router->post('/plat/{id}/vote',      [DishController::class, 'vote']);
+        $router->post('/plat/{id}/avis',      [DishController::class, 'rate']);
+    });
 
     // Authentification
     // Une seule page en deux étapes : l'email, puis le mot de passe ou l'inscription.

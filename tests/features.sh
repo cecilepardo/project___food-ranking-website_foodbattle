@@ -4,48 +4,86 @@
 cd "$(dirname "$0")/.." || exit 1   # racine du projet : docker compose y trouve compose.yaml
 source tests/lib.sh
 
-rate() {  # rate JAR PLAT PSEUDO NOTE COMMENTAIRE
+rate() {  # rate JAR PLAT NOTE COMMENTAIRE (l'auteur est le compte connecté dans JAR)
     req "$1" GET "/plat/$2"; local t; t=$(token)
-    req "$1" POST "/plat/$2/avis" --data-urlencode "token=$t" --data-urlencode "nickname=$3" \
-        --data-urlencode "score=$4" --data-urlencode "comment=$5"
+    req "$1" POST "/plat/$2/avis" --data-urlencode "token=$t" \
+        --data-urlencode "score=$3" --data-urlencode "comment=$4"
 }
 vote() {  # vote JAR PLAT
     req "$1" GET "/plat/$2"; local t; t=$(token)
     req "$1" POST "/plat/$2/vote" --data-urlencode "token=$t"
 }
+new_account() {  # new_account JAR : inscrit un compte de test (fx-RUN-JAR@test.fr) et le laisse connecté
+    step1 "$1" "fx-$RUN-$1@test.fr"
+    register "$1" "fx-$RUN-$1@test.fr" "Fx$RUN$1" motdepasse
+}
 
-section "PR #8 — un seul vote par plat, avec message"
+section "Votes réservés aux comptes (PR #8 adaptée)"
 DISH=5
+req v GET "/plat/$DISH"
+check "visiteur : lien « Connecte-toi pour voter », pas de formulaire de vote" \
+    bash -c 'grep -q "Connecte-toi pour voter" <<<"$1" && ! grep -q "action=\"/plat/[0-9]*/vote\"" <<<"$1"' _ "$BODY"
+t=$(token)
+req v POST "/plat/$DISH/vote" --data-urlencode "token=$t"
+check "visiteur POST /plat/$DISH/vote => 302 vers /connexion" [ "$CODE" = 302 -a "$LOC" = /connexion ]
+req v GET "/plat/$DISH/participer"
+check "visiteur GET /plat/$DISH/participer => 302 vers /connexion" [ "$CODE" = 302 -a "$LOC" = /connexion ]
+new_account v
+check "inscription depuis « participer » => renvoyé vers /plat/$DISH/participer" [ "$LOC" = "/plat/$DISH/participer" ]
+req v GET "/plat/$DISH/participer"
+check "… qui ramène sur la fiche du plat" [ "$CODE" = 302 -a "$LOC" = "/plat/$DISH" ]
+req v GET "/plat/$DISH"
+check "connecté : formulaire de vote + « Tu publies en tant que Fx…v »" \
+    bash -c 'grep -q "action=\"/plat/[0-9]*/vote\"" <<<"$1" && grep -q "Tu publies en tant que <b>Fx[0-9]*v</b>" <<<"$1"' _ "$BODY"
 before=$(sql "SELECT COUNT(*) FROM votes WHERE dish_id=$DISH")
 vote v $DISH
 check "1er vote => 302 vers /plat/$DISH?ok=1" [ "$CODE" = 302 -a "$LOC" = "/plat/$DISH?ok=1" ]
 vote v $DISH
-check "2e vote => 302 vers /plat/$DISH?deja=1" [ "$CODE" = 302 -a "$LOC" = "/plat/$DISH?deja=1" ]
+check "2e vote du même compte => 302 vers /plat/$DISH?deja=1" [ "$CODE" = 302 -a "$LOC" = "/plat/$DISH?deja=1" ]
 req v GET "/plat/$DISH?deja=1"
 check "message « Tu as déjà voté pour ce plat. » affiché" has 'Tu as déjà voté pour ce plat.'
 check "un seul vote compté en base" [ "$(sql "SELECT COUNT(*) FROM votes WHERE dish_id=$DISH")" = $((before + 1)) ]
+check "le vote est rattaché au compte" [ "$(sql "SELECT COUNT(*) FROM votes v JOIN users u ON u.id = v.user_id WHERE v.dish_id=$DISH AND u.email='fx-$RUN-v@test.fr'")" = 1 ]
 req v POST "/plat/$DISH/vote"
 check "vote sans jeton CSRF => 403" [ "$CODE" = 403 ]
 
 section "PR #5 — contraintes en base"
-check "statut d'avis inventé refusé par la base" grep -q 'ratings_status_check' <<<"$(sql "INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(1,'x',3,'x','spam')")"
-check "doublon de vote refusé par la base" grep -q 'duplicate key' <<<"$(sql "INSERT INTO votes(dish_id,visitor_key) VALUES(1,'seed-1-0')")"
+check "statut d'avis inventé refusé par la base" grep -q 'ratings_status_check' <<<"$(sql "INSERT INTO ratings(dish_id,user_id,score,comment,status) VALUES(1,NULL,3,'x','spam')")"
+check "doublon de vote (même compte, même plat) refusé par la base" grep -q 'duplicate key' <<<"$(sql "INSERT INTO votes(dish_id,user_id) SELECT 1, id FROM users WHERE nickname='Gourmand1'")"
 
-section "PR #3 — corrections"
-rate x 1 "Testeur$RUN" 4 "<script>alert('xss')</script>"
+section "Avis rattachés au compte (et corrections de la PR #3)"
+new_account x
+rate x 1 4 "<script>alert('xss')</script>"
 check "avis avec <script> => enregistré (302)" [ "$CODE" = 302 ]
 req x GET /plat/1
 check "XSS : commentaire affiché échappé" has "&lt;script&gt;alert(&#039;xss&#039;)&lt;/script&gt;"
 check "XSS : aucune balise <script>alert exécutable" hasnt "<script>alert('xss')"
-rate x 1 "$(printf 'n%.0s' {1..61})" 3 "ok"
-check "pseudo de 61 caractères => refusé (422)" [ "$CODE" = 422 ]
+check "l'avis est signé du pseudo du compte" has "Fx${RUN}x · 4/5"
+rate x 1 5 "Encore un avis"
+check "2e avis du même compte sur le même plat => 302 vers /plat/1?deja-avis=1" [ "$CODE" = 302 -a "$LOC" = "/plat/1?deja-avis=1" ]
+req x GET "/plat/1?deja-avis=1"
+check "message « Tu as déjà donné ton avis sur ce plat. » affiché" has 'Tu as déjà donné ton avis sur ce plat.'
+check "un seul avis du compte en base pour ce plat" [ "$(sql "SELECT COUNT(*) FROM ratings r JOIN users u ON u.id = r.user_id WHERE r.dish_id=1 AND u.email='fx-$RUN-x@test.fr'")" = 1 ]
+req x GET /plat/4; t=$(token)
+req x POST /plat/4/avis --data-urlencode "token=$t" --data "nickname=Admin&score=3&comment=usurpation"
+req x GET /plat/4
+check "pseudo envoyé dans le formulaire (Admin) ignoré : l'avis porte le pseudo du compte" \
+    bash -c 'grep -q "Fx[0-9]*x · 3/5" <<<"$1" && ! grep -q "Admin · 3/5" <<<"$1"' _ "$BODY"
+req w GET /plat/1; t=$(token)
+req w POST /plat/1/avis --data-urlencode "token=$t" --data "score=4&comment=anonyme"
+check "visiteur POST /plat/1/avis => 302 vers /connexion" [ "$CODE" = 302 -a "$LOC" = /connexion ]
 # Accents écrits déjà encodés en UTF-8 (%C3%A9 = « é ») : sous Windows, curl convertirait « é » en Latin-1.
-req x GET /plat/1; t=$(token)
-req x POST /plat/1/avis --data-urlencode "token=$t" --data "nickname=Eloise$RUN&score=3" \
+req x GET /plat/2; t=$(token)
+req x POST /plat/2/avis --data-urlencode "token=$t" --data "score=3" \
     --data "comment=$(printf '%%C3%%A9%.0s' {1..1000})"
 check "commentaire de 1000 caractères accentués => accepté (mb_strlen)" [ "$CODE" = 302 ]
-rate x 1 "Ok$RUN" 3 "$(printf 'c%.0s' {1..1001})"
+rate x 3 3 "$(printf 'c%.0s' {1..1001})"
 check "commentaire de 1001 caractères => refusé (422)" [ "$CODE" = 422 ]
+new_account d
+rate d 6 2 "Avis du compte supprime"
+sql "DELETE FROM users WHERE email = 'fx-$RUN-d@test.fr'" >/dev/null
+req d GET /plat/6
+check "compte supprimé => son avis reste, signé « Compte désactivé »" has 'Compte désactivé · 2/5'
 top=$(sql "SELECT d.name FROM dishes d ORDER BY (SELECT COUNT(*) FROM votes WHERE dish_id=d.id) DESC, d.id LIMIT 1")
 req x GET /classement
 first=$(grep -o '<a href="/plat/[0-9]*">[^<]*</a>' <<<"$BODY" | head -1 | sed 's/<[^>]*>//g')
@@ -82,29 +120,18 @@ req w GET /connexion; t=$(token)
 req w POST /connexion --data-urlencode "token=$t" --data "email=%C3%A9lodie$RUN@test.fr"
 check "email avec accent (UTF-8 valide) => pas d'erreur, refus propre (format)" bash -c "[ $CODE = 200 ] && grep -q 'Saisis une adresse email valide.' <<<\"\$0\"" "$BODY"
 
-section "Interactions auth × votes (limites connues)"
-vote y 7
-login y user@foodbattle.local foodbattle-user
-vote y 7
-if [ "$LOC" = "/plat/7?ok=1" ]; then
-    note "un visiteur qui vote puis se connecte peut revoter : la connexion change l'identifiant de session (visitor_key) → relier les votes à user_id"
-else
-    check "vote après connexion bloqué" true
-fi
-
 section "Champs envoyés sous forme de tableau (name[]=x)"
 req z GET '/?q[]=x'
 check "recherche q[] => page affichée, pas d'erreur PHP" bash -c '[ "$1" = 200 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
 req z GET '/?categorie[]=x'
 check "filtre categorie[] => page affichée, pas d'erreur PHP" bash -c '[ "$1" = 200 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
+new_account z
 req z POST /plat/1/vote --data 'token[]=x'
 check "vote avec token[] => 403 (jeton invalide), pas d'erreur PHP" bash -c '[ "$1" = 403 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
 req z GET /plat/1; t=$(token)
-req z POST /plat/1/avis --data "token=$t&nickname[]=x&score=3&comment=ok"
-check "avis avec nickname[] => 422, pas d'erreur PHP" bash -c '[ "$1" = 422 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
-req z POST /plat/1/avis --data "token=$t&nickname=x&score=3&comment[]=ok"
+req z POST /plat/1/avis --data "token=$t&score=3&comment[]=ok"
 check "avis avec comment[] => 422, pas d'erreur PHP" bash -c '[ "$1" = 422 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
-req z POST /plat/1/avis --data "token=$t&nickname=x&score[]=3&comment=ok"
+req z POST /plat/1/avis --data "token=$t&score[]=3&comment=ok"
 check "avis avec score[] => 422, pas d'erreur PHP" bash -c '[ "$1" = 422 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
 login za admin@foodbattle.local foodbattle-admin
 req za GET /dashboard; t=$(token)
@@ -132,7 +159,10 @@ else
     check "moyennes calculées sur les seuls avis publiés" true
 fi
 
-# Nettoyage : les avis créés par ce script.
-sql "DELETE FROM ratings WHERE nickname IN ('Testeur$RUN', 'Eloise$RUN')" >/dev/null
+# Nettoyage : les comptes de test de ce script, avec leurs votes et leurs avis.
+# (On supprime d'abord votes et avis : ON DELETE SET NULL les garderait sinon, signés « Compte désactivé ».)
+sql "DELETE FROM ratings WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'fx-$RUN-%@test.fr') OR comment = 'Avis du compte supprime'" >/dev/null
+sql "DELETE FROM votes WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'fx-$RUN-%@test.fr')" >/dev/null
+sql "DELETE FROM users WHERE email LIKE 'fx-$RUN-%@test.fr'" >/dev/null
 
 finish
