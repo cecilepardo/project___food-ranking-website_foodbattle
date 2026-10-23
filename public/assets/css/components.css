@@ -26,6 +26,11 @@
     background: var(--color-bg-muted-button);
 }
 
+/* Formulaire réduit à un bouton (ex. Supprimer), affiché sur la même ligne que le lien voisin. */
+.inline-form {
+    display: inline;
+}
+
 
 /* Étiquette de catégorie
    -------------------------------------------------------------------------- */

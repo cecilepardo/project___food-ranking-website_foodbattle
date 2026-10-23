@@ -26,6 +26,10 @@
     <p class="message">Le plat a été ajouté.</p>
 <?php endif; ?>
 
+<?php if ($deleted): ?>
+    <p class="message">Le plat a été supprimé.</p>
+<?php endif; ?>
+
 
 <h2 id="plats">Les plats (<?= count($dishes) ?>)</h2>
 
@@ -46,7 +50,10 @@
                 <td><?= euro($dish['price']) ?></td>
                 <td>
                     <a href="/dashboard/plats/<?= (int) $dish['id'] ?>/modifier">Modifier</a>
-                    <button type="button" class="btn btn--muted" data-delete="<?= (int) $dish['id'] ?>">Supprimer</button>
+                    <form class="inline-form" method="post" action="/dashboard/plats/<?= (int) $dish['id'] ?>/supprimer" data-delete>
+                        <?= csrf_field() ?>
+                        <button class="btn btn--muted">Supprimer</button>
+                    </form>
                 </td>
             </tr>
         <?php endforeach; ?>

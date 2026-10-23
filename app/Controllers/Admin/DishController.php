@@ -51,6 +51,19 @@ class DishController extends Controller
         $this->showForm($dish, saved: true);
     }
 
+    /**
+     * POST /dashboard/plats/{id}/supprimer
+     */
+    public function delete(int $id): void
+    {
+        $this->checkCsrf();
+        $this->findOrFail($id);
+
+        Dish::delete($id);
+
+        $this->redirect('/dashboard?deleted=1');
+    }
+
     private function showForm(array $dish, ?string $error = null, bool $saved = false): void
     {
         $this->render('admin-edit', [
