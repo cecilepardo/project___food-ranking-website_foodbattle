@@ -33,6 +33,10 @@ sid() { grep PHPSESSID "$DIR/$1" | awk '{print $7}'; }
 has()   { grep -q -- "$1" <<<"$BODY"; }
 hasnt() { ! grep -q -- "$1" <<<"$BODY"; }
 
+# Vrai si la dernière réponse ne trahit aucune erreur PHP.
+# En dev, une erreur fatale s'affiche dans la page avec un statut 200 : vérifier le statut ne suffit pas.
+no_php_error() { [ "$CODE" != 500 ] && hasnt 'Fatal error' && hasnt 'Uncaught'; }
+
 # Requête SQL dans le conteneur PostgreSQL (les erreurs sont gardées pour les tests de contraintes).
 sql() { docker compose exec -T db psql -U foodbattle -tAc "$1" 2>&1; }
 

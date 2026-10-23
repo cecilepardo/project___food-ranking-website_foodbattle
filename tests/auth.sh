@@ -25,7 +25,7 @@ check "POST /connexion sans jeton CSRF => 403" [ "$CODE" = 403 ]
 step1 v pas-un-email
 check "email invalide => reste à l'étape 1 avec erreur" has 'Saisis une adresse email valide.'
 req v POST /connexion --data "token[]=x&email[]=x"
-check "champs en tableau => pas d'erreur 500" [ "$CODE" != 500 ]
+check "champs en tableau => pas d'erreur PHP (ni 500, ni erreur affichée)" no_php_error
 
 section "Étape 2a : compte existant (user)"
 req u GET /connexion; before=$(sid u)

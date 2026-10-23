@@ -88,6 +88,36 @@ else
     check "vote après connexion bloqué" true
 fi
 
+section "Champs envoyés sous forme de tableau (name[]=x)"
+req z GET '/?q[]=x'
+check "recherche q[] => page affichée, pas d'erreur PHP" bash -c '[ "$1" = 200 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
+req z GET '/?categorie[]=x'
+check "filtre categorie[] => page affichée, pas d'erreur PHP" bash -c '[ "$1" = 200 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
+req z POST /plat/1/vote --data 'token[]=x'
+check "vote avec token[] => 403 (jeton invalide), pas d'erreur PHP" bash -c '[ "$1" = 403 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
+req z GET /plat/1; t=$(token)
+req z POST /plat/1/avis --data "token=$t&nickname[]=x&score=3&comment=ok"
+check "avis avec nickname[] => 422, pas d'erreur PHP" bash -c '[ "$1" = 422 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
+req z POST /plat/1/avis --data "token=$t&nickname=x&score=3&comment[]=ok"
+check "avis avec comment[] => 422, pas d'erreur PHP" bash -c '[ "$1" = 422 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
+req z POST /plat/1/avis --data "token=$t&nickname=x&score[]=3&comment=ok"
+check "avis avec score[] => 422, pas d'erreur PHP" bash -c '[ "$1" = 422 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
+login za admin@foodbattle.local foodbattle-admin
+req za GET /dashboard; t=$(token)
+DISH_FIELDS="token=$t&name=Tableau$RUN&price=10&establishment_id=1&category=burger&description=ok"
+req za POST /dashboard/plats --data "${DISH_FIELDS/name=Tableau$RUN/name[]=x}"
+check "ajout de plat avec name[] => message de validation, pas d'erreur PHP" bash -c 'grep -q "Vérifie les champs du plat." <<<"$1" && ! grep -q Uncaught <<<"$1"' _ "$BODY"
+req za POST /dashboard/plats --data "${DISH_FIELDS/category=burger/category[]=burger}"
+check "ajout de plat avec category[] => message de validation, pas d'erreur PHP" bash -c 'grep -q "Vérifie les champs du plat." <<<"$1" && ! grep -q Uncaught <<<"$1"' _ "$BODY"
+req za POST /dashboard/plats --data "${DISH_FIELDS/price=10/price[]=10}"
+check "ajout de plat avec price[] => message de validation, pas d'erreur PHP" bash -c 'grep -q "Vérifie les champs du plat." <<<"$1" && ! grep -q Uncaught <<<"$1"' _ "$BODY"
+req za POST /dashboard/plats --data "${DISH_FIELDS/description=ok/description[]=ok}"
+check "ajout de plat avec description[] => accepté sans description (302), pas d'erreur PHP" bash -c '[ "$1" = 302 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
+req za GET /dashboard/plats/1/modifier; t=$(token)
+req za POST /dashboard/plats/1/modifier --data "token=$t&name[]=x&price=10"
+check "modification de plat avec name[] => message de validation, pas d'erreur PHP" bash -c 'grep -q "Vérifie le nom et le prix." <<<"$1" && ! grep -q Uncaught <<<"$1"' _ "$BODY"
+sql "DELETE FROM dishes WHERE name = 'Tableau$RUN'" >/dev/null
+
 section "Moyennes affichées (constat)"
 # Plats dont la moyenne calculée sur tous les avis diffère de celle des seuls avis publiés.
 wrong=$(sql "SELECT COUNT(*) FROM (SELECT dish_id FROM ratings GROUP BY dish_id

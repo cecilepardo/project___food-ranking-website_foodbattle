@@ -28,11 +28,11 @@ class DashboardController extends Controller
     {
         $this->checkCsrf();
 
-        $name            = trim($_POST['name'] ?? '');
+        $name            = trim($this->postString('name'));
         $price           = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT);
         $establishmentId = filter_input(INPUT_POST, 'establishment_id', FILTER_VALIDATE_INT);
-        $category        = $_POST['category'] ?? '';
-        $description     = trim($_POST['description'] ?? '');
+        $category        = $this->postString('category');
+        $description     = trim($this->postString('description'));
 
         if (!$this->isValidDish($name, $price, $category, $establishmentId)) {
             $this->showDashboard('Vérifie les champs du plat.');
