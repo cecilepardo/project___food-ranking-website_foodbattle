@@ -103,6 +103,31 @@ req a POST /dashboard/plats/2/modifier --data-urlencode "token=$t" \
 check "admin modifie le prix => enregistré en base (11.90)" [ "$(sql "SELECT price FROM dishes WHERE id=2")" = 11.90 ]
 sql "UPDATE dishes SET price = $old_price WHERE id = 2" >/dev/null   # le nom n'a pas changé : seul le prix est restauré
 
+section "Prix : maximum 999,99 et 2 décimales"
+old_price=$(sql "SELECT price FROM dishes WHERE id=3")
+edit_price() {  # edit_price PRIX : modifie le prix du plat 3 en admin
+    req a GET /dashboard/plats/3/modifier; local t; t=$(token)
+    req a POST /dashboard/plats/3/modifier --data-urlencode "token=$t" \
+        --data-urlencode "name=$(sql "SELECT name FROM dishes WHERE id=3")" --data-urlencode "price=$1"
+}
+edit_price 999.99
+check "prix 999.99 => enregistré" [ "$(sql "SELECT price FROM dishes WHERE id=3")" = 999.99 ]
+edit_price 1000
+check "prix 1000 => refusé proprement" has 'Vérifie le nom et le prix'
+check "… prix inchangé en base" [ "$(sql "SELECT price FROM dishes WHERE id=3")" = 999.99 ]
+edit_price 1e7
+check "prix 1e7 => refusé proprement (plus d'erreur PDO)" bash -c "grep -q 'Vérifie le nom et le prix' <<<\"\$0\" && ! grep -q SQLSTATE <<<\"\$0\"" "$BODY"
+edit_price 12.345
+check "prix 12.345 => arrondi à 12.35 en base" [ "$(sql "SELECT price FROM dishes WHERE id=3")" = 12.35 ]
+check "… et le formulaire affiche 12.35 (valeur réellement enregistrée)" has 'value="12.35"'
+check "champ prix limité à 999.99 côté navigateur" has 'max="999.99"'
+sql "UPDATE dishes SET price = $old_price WHERE id = 3" >/dev/null
+req a GET /dashboard; t=$(token)
+req a POST /dashboard/plats --data-urlencode "token=$t" --data-urlencode "name=Trop cher $RUN" \
+    -d category=burger -d establishment_id=1 -d description=x -d price=1000000
+check "ajout d'un plat à 1000000 => refusé proprement" bash -c "! grep -q SQLSTATE <<<\"\$0\"" "$BODY"
+check "… aucun plat créé" [ "$(sql "SELECT COUNT(*) FROM dishes WHERE name='Trop cher $RUN'")" = 0 ]
+
 section "Suppression d'un plat (admin)"
 DEL=$(sql "INSERT INTO dishes(establishment_id,name,category,price) VALUES(1,'À supprimer $RUN','burger',5) RETURNING id" | head -1)
 sql "INSERT INTO votes(dish_id,user_id) SELECT $DEL, id FROM users WHERE email='user@foodbattle.local'" >/dev/null

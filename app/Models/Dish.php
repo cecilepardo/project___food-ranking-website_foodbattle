@@ -17,6 +17,9 @@ class Dish
         'pizza'  => 'Pizzas',
     ];
 
+    /** Prix maximum accepté par les formulaires (la colonne NUMERIC(8,2) planterait au-delà de 999 999,99). */
+    public const MAX_PRICE = 999.99;
+
     /**
      * Plats de la carte, avec leur restaurant, leur note moyenne et leur nombre de votes.
      * Filtres optionnels : nom du plat et catégorie.
