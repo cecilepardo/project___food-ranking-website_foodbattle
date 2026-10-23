@@ -182,16 +182,6 @@ class AuthController extends Controller
     }
 
     /**
-     * Valeur texte d'un champ POST ('' si absent ou si ce n'est pas du texte, ex. "email[]=x").
-     */
-    private function postString(string $key): string
-    {
-        $value = $_POST[$key] ?? '';
-
-        return is_string($value) ? $value : '';
-    }
-
-    /**
      * Même règle qu'en base (CHECK email = lower(email)) : "  Toto@Mail.fr " => "toto@mail.fr".
      */
     private function normalizeEmail(string $email): string

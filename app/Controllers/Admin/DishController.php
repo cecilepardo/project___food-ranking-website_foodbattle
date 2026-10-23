@@ -30,7 +30,7 @@ class DishController extends Controller
         $dish = $this->findOrFail($id);
         $this->checkCsrf();
 
-        $name  = trim($_POST['name'] ?? '');
+        $name  = trim($this->postString('name'));
         $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT);
 
         $isValid = $name !== ''

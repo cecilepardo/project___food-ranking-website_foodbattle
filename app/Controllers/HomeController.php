@@ -14,8 +14,8 @@ class HomeController extends Controller
 {
     public function index(): void
     {
-        $search   = trim($_GET['q'] ?? '');
-        $category = $_GET['categorie'] ?? '';
+        $search   = trim($this->queryString('q'));
+        $category = $this->queryString('categorie');
 
         $dishes = Dish::search($search, $this->categoryFilter($category));
 

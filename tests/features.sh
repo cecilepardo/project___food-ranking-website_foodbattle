@@ -39,7 +39,10 @@ check "XSS : commentaire affiché échappé" has "&lt;script&gt;alert(&#039;xss&
 check "XSS : aucune balise <script>alert exécutable" hasnt "<script>alert('xss')"
 rate x 1 "$(printf 'n%.0s' {1..61})" 3 "ok"
 check "pseudo de 61 caractères => refusé (422)" [ "$CODE" = 422 ]
-rate x 1 "Éloïse$RUN" 3 "$(printf 'é%.0s' {1..1000})"
+# Accents écrits déjà encodés en UTF-8 (%C3%A9 = « é ») : sous Windows, curl convertirait « é » en Latin-1.
+req x GET /plat/1; t=$(token)
+req x POST /plat/1/avis --data-urlencode "token=$t" --data "nickname=Eloise$RUN&score=3" \
+    --data "comment=$(printf '%%C3%%A9%.0s' {1..1000})"
 check "commentaire de 1000 caractères accentués => accepté (mb_strlen)" [ "$CODE" = 302 ]
 rate x 1 "Ok$RUN" 3 "$(printf 'c%.0s' {1..1001})"
 check "commentaire de 1001 caractères => refusé (422)" [ "$CODE" = 422 ]
@@ -56,10 +59,11 @@ req u GET /dashboard/plats/2/modifier
 check "user GET /dashboard/plats/2/modifier => 403" [ "$CODE" = 403 ]
 login a admin@foodbattle.local foodbattle-admin
 req a GET /dashboard/plats/2/modifier; t=$(token)
-old=$(sql "SELECT name || '|' || price FROM dishes WHERE id=2")
-req a POST /dashboard/plats/2/modifier --data-urlencode "token=$t" --data-urlencode "name=Le Jardin Fumé" --data-urlencode "price=11.90"
+old_price=$(sql "SELECT price FROM dishes WHERE id=2")
+req a POST /dashboard/plats/2/modifier --data-urlencode "token=$t" \
+    --data "name=Le%20Jardin%20Fum%C3%A9&price=11.90"
 check "admin modifie le prix => enregistré en base (11.90)" [ "$(sql "SELECT price FROM dishes WHERE id=2")" = 11.90 ]
-sql "UPDATE dishes SET name=split_part('$old','|',1), price=split_part('$old','|',2)::numeric WHERE id=2" >/dev/null
+sql "UPDATE dishes SET price = $old_price WHERE id = 2" >/dev/null   # le nom n'a pas changé : seul le prix est restauré
 
 section "PR #7 — encodage UTF-8"
 req w GET '/?q=%FF'
@@ -75,7 +79,7 @@ req w POST /connexion --data "token=$t&email=%FF%FE@test.fr"
 check "email en UTF-8 invalide => 400" [ "$CODE" = 400 ]
 check "… refusé avant le routeur : non compté par ThrottleAuth" [ "$(sql "SELECT COUNT(*) FROM rate_limit_hits")" = 0 ]
 req w GET /connexion; t=$(token)
-req w POST /connexion --data-urlencode "token=$t" --data-urlencode "email=élodie$RUN@test.fr"
+req w POST /connexion --data-urlencode "token=$t" --data "email=%C3%A9lodie$RUN@test.fr"
 check "email avec accent (UTF-8 valide) => pas d'erreur, refus propre (format)" bash -c "[ $CODE = 200 ] && grep -q 'Saisis une adresse email valide.' <<<\"\$0\"" "$BODY"
 
 section "Interactions auth × votes (limites connues)"
@@ -88,6 +92,36 @@ else
     check "vote après connexion bloqué" true
 fi
 
+section "Champs envoyés sous forme de tableau (name[]=x)"
+req z GET '/?q[]=x'
+check "recherche q[] => page affichée, pas d'erreur PHP" bash -c '[ "$1" = 200 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
+req z GET '/?categorie[]=x'
+check "filtre categorie[] => page affichée, pas d'erreur PHP" bash -c '[ "$1" = 200 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
+req z POST /plat/1/vote --data 'token[]=x'
+check "vote avec token[] => 403 (jeton invalide), pas d'erreur PHP" bash -c '[ "$1" = 403 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
+req z GET /plat/1; t=$(token)
+req z POST /plat/1/avis --data "token=$t&nickname[]=x&score=3&comment=ok"
+check "avis avec nickname[] => 422, pas d'erreur PHP" bash -c '[ "$1" = 422 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
+req z POST /plat/1/avis --data "token=$t&nickname=x&score=3&comment[]=ok"
+check "avis avec comment[] => 422, pas d'erreur PHP" bash -c '[ "$1" = 422 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
+req z POST /plat/1/avis --data "token=$t&nickname=x&score[]=3&comment=ok"
+check "avis avec score[] => 422, pas d'erreur PHP" bash -c '[ "$1" = 422 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
+login za admin@foodbattle.local foodbattle-admin
+req za GET /dashboard; t=$(token)
+DISH_FIELDS="token=$t&name=Tableau$RUN&price=10&establishment_id=1&category=burger&description=ok"
+req za POST /dashboard/plats --data "${DISH_FIELDS/name=Tableau$RUN/name[]=x}"
+check "ajout de plat avec name[] => message de validation, pas d'erreur PHP" bash -c 'grep -q "Vérifie les champs du plat." <<<"$1" && ! grep -q Uncaught <<<"$1"' _ "$BODY"
+req za POST /dashboard/plats --data "${DISH_FIELDS/category=burger/category[]=burger}"
+check "ajout de plat avec category[] => message de validation, pas d'erreur PHP" bash -c 'grep -q "Vérifie les champs du plat." <<<"$1" && ! grep -q Uncaught <<<"$1"' _ "$BODY"
+req za POST /dashboard/plats --data "${DISH_FIELDS/price=10/price[]=10}"
+check "ajout de plat avec price[] => message de validation, pas d'erreur PHP" bash -c 'grep -q "Vérifie les champs du plat." <<<"$1" && ! grep -q Uncaught <<<"$1"' _ "$BODY"
+req za POST /dashboard/plats --data "${DISH_FIELDS/description=ok/description[]=ok}"
+check "ajout de plat avec description[] => accepté sans description (302), pas d'erreur PHP" bash -c '[ "$1" = 302 ] && ! grep -q Uncaught <<<"$2"' _ "$CODE" "$BODY"
+req za GET /dashboard/plats/1/modifier; t=$(token)
+req za POST /dashboard/plats/1/modifier --data "token=$t&name[]=x&price=10"
+check "modification de plat avec name[] => message de validation, pas d'erreur PHP" bash -c 'grep -q "Vérifie le nom et le prix." <<<"$1" && ! grep -q Uncaught <<<"$1"' _ "$BODY"
+sql "DELETE FROM dishes WHERE name = 'Tableau$RUN'" >/dev/null
+
 section "Moyennes affichées (constat)"
 # Plats dont la moyenne calculée sur tous les avis diffère de celle des seuls avis publiés.
 wrong=$(sql "SELECT COUNT(*) FROM (SELECT dish_id FROM ratings GROUP BY dish_id
@@ -99,6 +133,6 @@ else
 fi
 
 # Nettoyage : les avis créés par ce script.
-sql "DELETE FROM ratings WHERE nickname IN ('Testeur$RUN', 'Éloïse$RUN')" >/dev/null
+sql "DELETE FROM ratings WHERE nickname IN ('Testeur$RUN', 'Eloise$RUN')" >/dev/null
 
 finish

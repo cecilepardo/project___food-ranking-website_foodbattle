@@ -59,8 +59,8 @@ class DishController extends Controller
         $this->ensureDishExists($id);
 
         $score    = filter_input(INPUT_POST, 'score', FILTER_VALIDATE_INT);
-        $nickname = trim($_POST['nickname'] ?? '');
-        $comment  = trim($_POST['comment'] ?? '');
+        $nickname = trim($this->postString('nickname'));
+        $comment  = trim($this->postString('comment'));
 
         if (!$this->isValidRating($score, $nickname, $comment)) {
             $this->abort(422, 'Vérifie les champs de ton avis.');
