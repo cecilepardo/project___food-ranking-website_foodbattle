@@ -29,7 +29,7 @@
 
     <label>
         Prix
-        <input name="price" type="number" step="0.01" min="0" value="<?= e($dish['price']) ?>" required>
+        <input name="price" type="number" step="0.5" data-arrow-step="0.5" min="0" value="<?= e($dish['price']) ?>" required>
     </label>
 
     <button class="btn">Enregistrer</button>
