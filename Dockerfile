@@ -1,4 +1,4 @@
-FROM php:8.3-apache
+FROM php:8.3.36-apache
 
 # Extension PostgreSQL pour PDO
 RUN apt-get update \
