@@ -12,9 +12,12 @@ use App\Models\Dish;
  */
 class HomeController extends Controller
 {
+    private const SEARCH_MAX_LENGTH = 100;
+
     public function index(): void
     {
-        $search   = trim($this->queryString('q'));
+        // Une recherche n'a pas besoin de plus de 100 caractères : au-delà, on coupe.
+        $search   = mb_substr(trim($this->queryString('q')), 0, self::SEARCH_MAX_LENGTH);
         $category = $this->queryString('categorie');
 
         $dishes = Dish::search($search, $this->categoryFilter($category));

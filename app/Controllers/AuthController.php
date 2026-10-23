@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\RateLimiter;
+use App\Core\Validator;
 use App\Models\User;
 
 /**
@@ -20,7 +21,6 @@ use App\Models\User;
 class AuthController extends Controller
 {
     private const EMAIL_MAX_LENGTH    = 254; // users.email VARCHAR(254)
-    private const NICKNAME_MAX_LENGTH = 60;  // users.nickname VARCHAR(60)
     private const PASSWORD_MIN_LENGTH = 8;
     // bcrypt ignore tout ce qui dépasse 72 octets : on refuse plutôt que de tronquer en silence.
     private const PASSWORD_MAX_BYTES  = 72;
@@ -159,8 +159,11 @@ class AuthController extends Controller
         if (!$this->isValidEmail($email)) {
             return 'Saisis une adresse email valide.';
         }
-        if ($nickname === '' || mb_strlen($nickname) > self::NICKNAME_MAX_LENGTH) {
-            return 'Le pseudo doit contenir entre 1 et 60 caractères.';
+        if (!Validator::isNickname($nickname)) {
+            return 'Pseudo invalide : 3 à 30 caractères, lettres, chiffres, espaces, « . », « - » ou « _ ».';
+        }
+        if (Validator::isReservedNickname($nickname)) {
+            return 'Ce pseudo est réservé.';
         }
         if (mb_strlen($password) < self::PASSWORD_MIN_LENGTH || strlen($password) > self::PASSWORD_MAX_BYTES) {
             return 'Le mot de passe doit contenir entre 8 et 72 caractères.';

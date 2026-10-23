@@ -35,7 +35,7 @@ class Dish
 
         if ($name !== '') {
             $sql .= ' AND d.name ILIKE ?';
-            $params[] = '%' . $name . '%';
+            $params[] = '%' . self::escapeLike($name) . '%';
         }
 
         if ($category !== '') {
@@ -144,5 +144,14 @@ class Dish
     {
         $statement = Database::get()->prepare('DELETE FROM dishes WHERE id = ?');
         $statement->execute([$id]);
+    }
+
+    /**
+     * Dans un LIKE, « % » et « _ » sont des jokers : on les échappe pour qu'une recherche
+     * de « 100% » cherche vraiment le texte « 100% ». PostgreSQL utilise « \ » comme caractère d'échappement.
+     */
+    private static function escapeLike(string $text): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $text);
     }
 }

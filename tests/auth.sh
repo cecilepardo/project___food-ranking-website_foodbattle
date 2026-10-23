@@ -78,10 +78,12 @@ check "champ caché trafiqué (email existant) => refusé" has 'Un compte existe
 register r pas-un-email "$NICK" motdepasse
 check "champ caché trafiqué (email invalide) => refusé" has 'Saisis une adresse email valide.'
 register r "$NEW" "<b>$NICK</b>" motdepasse
+check "pseudo avec balises HTML (<b>…</b>) => refusé par le format" has 'Pseudo invalide'
+register r "$NEW" "$NICK" motdepasse
 check "inscription valide => 302 vers /" [ "$CODE" = 302 -a "$LOC" = / ]
 check "compte créé : rôle user, hash \$2y\$12\$" [ "$(sql "SELECT role || ' ' || left(password_hash,7) FROM users WHERE email='$NEW'")" = 'user $2y$12$' ]
 req r GET /
-check "pseudo affiché échappé (pas de XSS)" has "&lt;b&gt;$NICK&lt;/b&gt;"
+check "pseudo du compte affiché dans le header" has "$NICK"
 req r GET /dashboard
 check "nouvel inscrit GET /dashboard => 403" [ "$CODE" = 403 ]
 

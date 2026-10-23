@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Controller;
+use App\Core\Validator;
 use App\Models\Dish;
 use App\Models\Rating;
 use App\Models\Vote;
@@ -90,7 +91,7 @@ class DishController extends Controller
     private function isValidRating(mixed $score, string $comment): bool
     {
         $scoreIsValid   = is_int($score) && $score >= 1 && $score <= 5;
-        $commentIsValid = $comment !== '' && mb_strlen($comment) <= 1000;
+        $commentIsValid = mb_strlen($comment) <= 1000 && Validator::isCleanText($comment);
 
         return $scoreIsValid && $commentIsValid;
     }
