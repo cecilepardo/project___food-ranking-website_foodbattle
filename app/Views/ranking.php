@@ -25,7 +25,7 @@
                 <td><a href="/plat/<?= (int) $dish['id'] ?>"><?= e($dish['name']) ?></a></td>
                 <td><?= e($dish['restaurant']) ?></td>
                 <td><?= (int) $dish['votes'] ?></td>
-                <td><?= score($dish['average']) ?></td>
+                <td><?= $dish['average'] ? score($dish['average']) : '—' ?></td>
             </tr>
         <?php endforeach; ?>
     </tbody>
