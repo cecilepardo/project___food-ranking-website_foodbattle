@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Controller;
 use App\Models\Dish;
 use App\Models\Rating;
@@ -27,12 +28,26 @@ class DishController extends Controller
         }
 
         $this->render('dish', [
-            'title'   => 'Le plat',
-            'dish'    => $dish,
-            'reviews' => Rating::publishedForDish($id),
+            'title'        => 'Le plat',
+            'dish'         => $dish,
+            'reviews'      => Rating::publishedForDish($id),
+            'currentUser'  => Auth::user(),
             'saved'        => isset($_GET['ok']),
             'alreadyVoted' => isset($_GET['deja']),
+            'alreadyRated' => isset($_GET['deja-avis']),
         ]);
+    }
+
+    /**
+     * GET /plat/{id}/participer
+     * Lien « Connecte-toi pour voter » : protégé par RequireLogin, qui mémorise cette page GET.
+     * Après la connexion, l'utilisateur arrive ici puis revient sur la fiche du plat.
+     */
+    public function participate(int $id): void
+    {
+        $this->ensureDishExists($id);
+
+        $this->redirect('/plat/' . $id);
     }
 
     /**
@@ -43,7 +58,7 @@ class DishController extends Controller
         $this->checkCsrf();
         $this->ensureDishExists($id);
 
-        if (!Vote::create($id, session_id())) {
+        if (!Vote::create($id, $this->currentUserId())) {
             $this->redirect('/plat/' . $id . '?deja=1');
         }
 
@@ -58,27 +73,41 @@ class DishController extends Controller
         $this->checkCsrf();
         $this->ensureDishExists($id);
 
-        $score    = filter_input(INPUT_POST, 'score', FILTER_VALIDATE_INT);
-        $nickname = trim($this->postString('nickname'));
-        $comment  = trim($this->postString('comment'));
+        $score   = filter_input(INPUT_POST, 'score', FILTER_VALIDATE_INT);
+        $comment = trim($this->postString('comment'));
 
-        if (!$this->isValidRating($score, $nickname, $comment)) {
+        if (!$this->isValidRating($score, $comment)) {
             $this->abort(422, 'Vérifie les champs de ton avis.');
         }
 
-        Rating::create($id, $nickname, $score, $comment);
+        if (!Rating::create($id, $this->currentUserId(), $score, $comment)) {
+            $this->redirect('/plat/' . $id . '?deja-avis=1');
+        }
 
         $this->redirectToDish($id);
     }
 
-    private function isValidRating(mixed $score, string $nickname, string $comment): bool
+    private function isValidRating(mixed $score, string $comment): bool
     {
+        $scoreIsValid   = is_int($score) && $score >= 1 && $score <= 5;
+        $commentIsValid = $comment !== '' && mb_strlen($comment) <= 1000;
 
-        $scoreIsValid    = is_int($score) && $score >= 1 && $score <= 5;
-        $nicknameIsValid = $nickname !== '' && mb_strlen($nickname) <= 60;
-        $commentIsValid  = $comment !== '' && mb_strlen($comment) <= 1000;
+        return $scoreIsValid && $commentIsValid;
+    }
 
-        return $scoreIsValid && $nicknameIsValid && $commentIsValid;
+    /**
+     * Id de l'utilisateur connecté. Les routes de vote et d'avis sont protégées par RequireLogin :
+     * le cas « personne n'est connecté » ne devrait pas arriver, mais on ne laisse jamais passer un id manquant.
+     */
+    private function currentUserId(): int
+    {
+        $userId = Auth::id();
+
+        if ($userId === null) {
+            $this->redirect('/connexion');
+        }
+
+        return $userId;
     }
 
     private function ensureDishExists(int $id): void

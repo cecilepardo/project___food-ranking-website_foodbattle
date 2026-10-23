@@ -2,10 +2,12 @@
 /**
  * Fiche d'un plat : informations, vote, formulaire d'avis et avis publiés.
  *
- * @var array $dish
- * @var array $reviews  Avis publiés
- * @var bool  $saved    true après un vote ou un avis
- * @var bool  $alreadyVoted  true si le visiteur avait déjà voté
+ * @var array      $dish
+ * @var array      $reviews       Avis publiés
+ * @var array|null $currentUser   Utilisateur connecté (id, nickname, role), null pour un visiteur
+ * @var bool       $saved         true après un vote ou un avis
+ * @var bool       $alreadyVoted  true si l'utilisateur avait déjà voté
+ * @var bool       $alreadyRated  true si l'utilisateur avait déjà donné son avis
  */
 use App\Core\View;
 
@@ -24,10 +26,14 @@ $dishId = (int) $dish['id'];
         <p><?= e($dish['description']) ?></p>
         <h3><?= euro($dish['price']) ?></h3>
 
-        <form method="post" action="/plat/<?= $dishId ?>/vote">
-            <?= csrf_field() ?>
-            <button class="btn">♥ Voter pour ce plat</button>
-        </form>
+        <?php if ($currentUser): ?>
+            <form method="post" action="/plat/<?= $dishId ?>/vote">
+                <?= csrf_field() ?>
+                <button class="btn">♥ Voter pour ce plat</button>
+            </form>
+        <?php else: ?>
+            <a class="btn" href="/plat/<?= $dishId ?>/participer">♥ Connecte-toi pour voter</a>
+        <?php endif; ?>
 
         <small>Le vote désigne ton favori ; la note exprime ton appréciation sur 5.</small>
     </div>
@@ -41,38 +47,43 @@ $dishId = (int) $dish['id'];
     <p class="message" role="status">Tu as déjà voté pour ce plat.</p>
 <?php endif; ?>
 
+<?php if ($alreadyRated): ?>
+    <p class="message" role="status">Tu as déjà donné ton avis sur ce plat.</p>
+<?php endif; ?>
+
 <h2>Donner mon avis</h2>
 
-<form class="form-panel" method="post" action="/plat/<?= $dishId ?>/avis">
-    <?= csrf_field() ?>
+<?php if ($currentUser): ?>
+    <form class="form-panel" method="post" action="/plat/<?= $dishId ?>/avis">
+        <?= csrf_field() ?>
 
-    <label>
-        Pseudo
-        <input name="nickname" maxlength="60" required>
-    </label>
+        <p>Tu publies en tant que <b><?= e($currentUser['nickname']) ?></b>.</p>
 
-    <label>
-        Note
-        <select name="score" required>
-            <?php for ($score = 5; $score >= 1; $score--): ?>
-                <option value="<?= $score ?>"><?= $score ?>/5</option>
-            <?php endfor; ?>
-        </select>
-    </label>
+        <label>
+            Note
+            <select name="score" required>
+                <?php for ($score = 5; $score >= 1; $score--): ?>
+                    <option value="<?= $score ?>"><?= $score ?>/5</option>
+                <?php endfor; ?>
+            </select>
+        </label>
 
-    <label>
-        Commentaire
-        <textarea name="comment" maxlength="1000" required></textarea>
-    </label>
+        <label>
+            Commentaire
+            <textarea name="comment" maxlength="1000" required></textarea>
+        </label>
 
-    <button class="btn">Publier mon avis</button>
-</form>
+        <button class="btn">Publier mon avis</button>
+    </form>
+<?php else: ?>
+    <p><a href="/plat/<?= $dishId ?>/participer">Connecte-toi</a> pour donner ton avis.</p>
+<?php endif; ?>
 
 <h2>Les avis</h2>
 
 <?php foreach ($reviews as $review): ?>
     <article class="review">
-        <b><?= e($review['nickname']) ?> · <?= (int) $review['score'] ?>/5</b>
+        <b><?= e($review['nickname'] ?? 'Compte désactivé') ?> · <?= (int) $review['score'] ?>/5</b>
         <p><?= e($review['comment']) ?></p>
     </article>
 <?php endforeach; ?>

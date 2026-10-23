@@ -21,7 +21,7 @@
         <?php foreach ($reviews as $review): ?>
             <tr>
                 <td><?= e($review['dish']) ?></td>
-                <td><?= e($review['nickname']) ?></td>
+                <td><?= e($review['nickname'] ?? 'Compte désactivé') ?></td>
                 <td><?= e($review['comment']) ?></td>
                 <td><?= e($review['status']) ?></td>
             </tr>

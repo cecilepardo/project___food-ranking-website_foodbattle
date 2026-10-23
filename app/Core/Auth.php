@@ -77,6 +77,14 @@ class Auth
         return $_SESSION[self::SESSION_KEY] ?? null;
     }
 
+    /**
+     * Id de l'utilisateur connecté, ou null pour un visiteur.
+     */
+    public static function id(): ?int
+    {
+        return self::user()['id'] ?? null;
+    }
+
     public static function check(): bool
     {
         return self::user() !== null;

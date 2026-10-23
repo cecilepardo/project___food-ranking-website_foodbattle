@@ -11,12 +11,16 @@ use App\Core\Database;
  */
 class Vote
 {
-    public static function create(int $dishId, string $visitorKey): bool
+    /**
+     * Enregistre le vote d'un compte pour un plat. Renvoie false s'il avait déjà voté :
+     * la contrainte UNIQUE (dish_id, user_id) fait ignorer le doublon par la base.
+     */
+    public static function create(int $dishId, int $userId): bool
     {
         $statement = Database::get()->prepare(
-            'INSERT INTO votes (dish_id, visitor_key) VALUES (?, ?) ON CONFLICT DO NOTHING'
+            'INSERT INTO votes (dish_id, user_id) VALUES (?, ?) ON CONFLICT (dish_id, user_id) DO NOTHING'
         );
-        $statement->execute([$dishId, $visitorKey]);
+        $statement->execute([$dishId, $userId]);
 
         return $statement->rowCount() > 0;
     }

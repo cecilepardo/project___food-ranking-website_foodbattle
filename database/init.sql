@@ -1,11 +1,6 @@
 -- pgcrypto fournit crypt() et gen_salt(), utilisés pour hacher les mots de passe des comptes de démo.
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE TABLE establishments (id SERIAL PRIMARY KEY, name VARCHAR(120) NOT NULL, city VARCHAR(80) NOT NULL, address TEXT NOT NULL);
-CREATE TABLE dishes (id SERIAL PRIMARY KEY, establishment_id INTEGER NOT NULL REFERENCES establishments(id), name VARCHAR(120) NOT NULL, category VARCHAR(20) NOT NULL CHECK (category IN ('burger','tacos','pizza')), description TEXT NOT NULL DEFAULT '', price NUMERIC(8,2) NOT NULL CHECK (price >= 0));
-CREATE TABLE ratings (id SERIAL PRIMARY KEY, dish_id INTEGER NOT NULL REFERENCES dishes(id) ON DELETE CASCADE, nickname VARCHAR(60) NOT NULL, score INTEGER NOT NULL CHECK(score BETWEEN 1 AND 5), comment TEXT NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'published' CHECK (status IN ('pending','published','rejected')), created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE votes (id SERIAL PRIMARY KEY, dish_id INTEGER NOT NULL REFERENCES dishes(id) ON DELETE CASCADE, visitor_key VARCHAR(128) NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, UNIQUE (dish_id, visitor_key));
-
 -- Comptes du site. L'inscription publique crée toujours un 'user' ;
 -- un 'admin' ne peut être créé que directement en base.
 CREATE TABLE users (
@@ -23,6 +18,32 @@ CREATE TABLE users (
 -- Pseudo unique sans tenir compte de la casse ("Toto" et "toto" ne peuvent pas coexister),
 -- tout en gardant à l'affichage la casse choisie par l'utilisateur.
 CREATE UNIQUE INDEX users_nickname_unique ON users (lower(nickname));
+
+CREATE TABLE establishments (id SERIAL PRIMARY KEY, name VARCHAR(120) NOT NULL, city VARCHAR(80) NOT NULL, address TEXT NOT NULL);
+CREATE TABLE dishes (id SERIAL PRIMARY KEY, establishment_id INTEGER NOT NULL REFERENCES establishments(id), name VARCHAR(120) NOT NULL, category VARCHAR(20) NOT NULL CHECK (category IN ('burger','tacos','pizza')), description TEXT NOT NULL DEFAULT '', price NUMERIC(8,2) NOT NULL CHECK (price >= 0));
+
+-- Avis sur un plat. Un seul avis par compte et par plat.
+CREATE TABLE ratings (
+    id         SERIAL PRIMARY KEY,
+    dish_id    INTEGER     NOT NULL REFERENCES dishes(id) ON DELETE CASCADE,
+    -- Auteur. NULL = compte supprimé : l'avis reste, affiché « Compte désactivé ».
+    user_id    INTEGER     REFERENCES users(id) ON DELETE SET NULL,
+    score      INTEGER     NOT NULL CHECK (score BETWEEN 1 AND 5),
+    comment    TEXT        NOT NULL,
+    status     VARCHAR(20) NOT NULL DEFAULT 'published' CHECK (status IN ('pending', 'published', 'rejected')),
+    created_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (dish_id, user_id)
+);
+
+-- Votes pour un plat. Un seul vote par compte et par plat.
+CREATE TABLE votes (
+    id         SERIAL PRIMARY KEY,
+    dish_id    INTEGER   NOT NULL REFERENCES dishes(id) ON DELETE CASCADE,
+    -- Votant. NULL = compte supprimé : le vote continue de compter.
+    user_id    INTEGER   REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (dish_id, user_id)
+);
 
 -- Tentatives horodatées, pour limiter le brute-force (voir App\Core\RateLimiter).
 -- "key" désigne ce qu'on compte : 'auth-ip:<adresse IP>' ou 'login:<email>'.
@@ -49,175 +70,6 @@ INSERT INTO dishes(establishment_id,name,category,description,price) VALUES(5,'L
 INSERT INTO dishes(establishment_id,name,category,description,price) VALUES(5,'Le Piment Doux','tacos','Légumes, bœuf et sauce légèrement épicée.',10);
 INSERT INTO dishes(establishment_id,name,category,description,price) VALUES(6,'La Minuit','pizza','Tomate, poivrons, olives et mozzarella.',13);
 INSERT INTO dishes(establishment_id,name,category,description,price) VALUES(6,'La Quatre Fromages','pizza','Quatre fromages et une pâte fine.',14);
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(1,'Gourmand3',3,'Belle découverte dans le quartier.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(1,'Gourmand4',4,'La sauce fait la différence.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(1,'Gourmand5',5,'Bon rapport qualité-prix.','published');
-INSERT INTO votes(dish_id,visitor_key) VALUES(1,'seed-1-0');
-INSERT INTO votes(dish_id,visitor_key) VALUES(1,'seed-1-1');
-INSERT INTO votes(dish_id,visitor_key) VALUES(1,'seed-1-2');
-INSERT INTO votes(dish_id,visitor_key) VALUES(1,'seed-1-3');
-INSERT INTO votes(dish_id,visitor_key) VALUES(1,'seed-1-4');
-INSERT INTO votes(dish_id,visitor_key) VALUES(1,'seed-1-5');
-INSERT INTO votes(dish_id,visitor_key) VALUES(1,'seed-1-6');
-INSERT INTO votes(dish_id,visitor_key) VALUES(1,'seed-1-7');
-INSERT INTO votes(dish_id,visitor_key) VALUES(1,'seed-1-8');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(2,'Gourmand6',4,'La sauce fait la différence.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(2,'Gourmand7',5,'Bon rapport qualité-prix.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(2,'Gourmand8',2,'Une option sympa pour le midi.','published');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-0');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-1');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-2');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-3');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-4');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-5');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-6');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-7');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-8');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-9');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-10');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-11');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-12');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-13');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-14');
-INSERT INTO votes(dish_id,visitor_key) VALUES(2,'seed-2-15');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(3,'Gourmand9',5,'Bon rapport qualité-prix.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(3,'Gourmand10',2,'Une option sympa pour le midi.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(3,'Gourmand11',3,'Très bon, je reviendrai.','pending');
-INSERT INTO votes(dish_id,visitor_key) VALUES(3,'seed-3-0');
-INSERT INTO votes(dish_id,visitor_key) VALUES(3,'seed-3-1');
-INSERT INTO votes(dish_id,visitor_key) VALUES(3,'seed-3-2');
-INSERT INTO votes(dish_id,visitor_key) VALUES(3,'seed-3-3');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(4,'Gourmand12',2,'Une option sympa pour le midi.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(4,'Gourmand13',3,'Très bon, je reviendrai.','pending');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(4,'Gourmand14',4,'Belle découverte dans le quartier.','published');
-INSERT INTO votes(dish_id,visitor_key) VALUES(4,'seed-4-0');
-INSERT INTO votes(dish_id,visitor_key) VALUES(4,'seed-4-1');
-INSERT INTO votes(dish_id,visitor_key) VALUES(4,'seed-4-2');
-INSERT INTO votes(dish_id,visitor_key) VALUES(4,'seed-4-3');
-INSERT INTO votes(dish_id,visitor_key) VALUES(4,'seed-4-4');
-INSERT INTO votes(dish_id,visitor_key) VALUES(4,'seed-4-5');
-INSERT INTO votes(dish_id,visitor_key) VALUES(4,'seed-4-6');
-INSERT INTO votes(dish_id,visitor_key) VALUES(4,'seed-4-7');
-INSERT INTO votes(dish_id,visitor_key) VALUES(4,'seed-4-8');
-INSERT INTO votes(dish_id,visitor_key) VALUES(4,'seed-4-9');
-INSERT INTO votes(dish_id,visitor_key) VALUES(4,'seed-4-10');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(5,'Gourmand15',3,'Très bon, je reviendrai.','pending');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(5,'Gourmand16',4,'Belle découverte dans le quartier.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(5,'Gourmand17',5,'La sauce fait la différence.','published');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-0');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-1');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-2');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-3');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-4');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-5');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-6');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-7');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-8');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-9');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-10');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-11');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-12');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-13');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-14');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-15');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-16');
-INSERT INTO votes(dish_id,visitor_key) VALUES(5,'seed-5-17');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(6,'Gourmand18',4,'Belle découverte dans le quartier.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(6,'Gourmand19',5,'La sauce fait la différence.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(6,'Gourmand20',2,'Bon rapport qualité-prix.','published');
-INSERT INTO votes(dish_id,visitor_key) VALUES(6,'seed-6-0');
-INSERT INTO votes(dish_id,visitor_key) VALUES(6,'seed-6-1');
-INSERT INTO votes(dish_id,visitor_key) VALUES(6,'seed-6-2');
-INSERT INTO votes(dish_id,visitor_key) VALUES(6,'seed-6-3');
-INSERT INTO votes(dish_id,visitor_key) VALUES(6,'seed-6-4');
-INSERT INTO votes(dish_id,visitor_key) VALUES(6,'seed-6-5');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(7,'Gourmand21',5,'La sauce fait la différence.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(7,'Gourmand22',2,'Bon rapport qualité-prix.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(7,'Gourmand23',3,'Une option sympa pour le midi.','published');
-INSERT INTO votes(dish_id,visitor_key) VALUES(7,'seed-7-0');
-INSERT INTO votes(dish_id,visitor_key) VALUES(7,'seed-7-1');
-INSERT INTO votes(dish_id,visitor_key) VALUES(7,'seed-7-2');
-INSERT INTO votes(dish_id,visitor_key) VALUES(7,'seed-7-3');
-INSERT INTO votes(dish_id,visitor_key) VALUES(7,'seed-7-4');
-INSERT INTO votes(dish_id,visitor_key) VALUES(7,'seed-7-5');
-INSERT INTO votes(dish_id,visitor_key) VALUES(7,'seed-7-6');
-INSERT INTO votes(dish_id,visitor_key) VALUES(7,'seed-7-7');
-INSERT INTO votes(dish_id,visitor_key) VALUES(7,'seed-7-8');
-INSERT INTO votes(dish_id,visitor_key) VALUES(7,'seed-7-9');
-INSERT INTO votes(dish_id,visitor_key) VALUES(7,'seed-7-10');
-INSERT INTO votes(dish_id,visitor_key) VALUES(7,'seed-7-11');
-INSERT INTO votes(dish_id,visitor_key) VALUES(7,'seed-7-12');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(8,'Gourmand24',2,'Bon rapport qualité-prix.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(8,'Gourmand25',3,'Une option sympa pour le midi.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(8,'Gourmand26',4,'Très bon, je reviendrai.','pending');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-0');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-1');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-2');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-3');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-4');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-5');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-6');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-7');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-8');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-9');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-10');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-11');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-12');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-13');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-14');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-15');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-16');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-17');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-18');
-INSERT INTO votes(dish_id,visitor_key) VALUES(8,'seed-8-19');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(9,'Gourmand27',3,'Une option sympa pour le midi.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(9,'Gourmand28',4,'Très bon, je reviendrai.','pending');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(9,'Gourmand29',5,'Belle découverte dans le quartier.','published');
-INSERT INTO votes(dish_id,visitor_key) VALUES(9,'seed-9-0');
-INSERT INTO votes(dish_id,visitor_key) VALUES(9,'seed-9-1');
-INSERT INTO votes(dish_id,visitor_key) VALUES(9,'seed-9-2');
-INSERT INTO votes(dish_id,visitor_key) VALUES(9,'seed-9-3');
-INSERT INTO votes(dish_id,visitor_key) VALUES(9,'seed-9-4');
-INSERT INTO votes(dish_id,visitor_key) VALUES(9,'seed-9-5');
-INSERT INTO votes(dish_id,visitor_key) VALUES(9,'seed-9-6');
-INSERT INTO votes(dish_id,visitor_key) VALUES(9,'seed-9-7');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(10,'Gourmand30',4,'Très bon, je reviendrai.','pending');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(10,'Gourmand31',5,'Belle découverte dans le quartier.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(10,'Gourmand32',2,'La sauce fait la différence.','published');
-INSERT INTO votes(dish_id,visitor_key) VALUES(10,'seed-10-0');
-INSERT INTO votes(dish_id,visitor_key) VALUES(10,'seed-10-1');
-INSERT INTO votes(dish_id,visitor_key) VALUES(10,'seed-10-2');
-INSERT INTO votes(dish_id,visitor_key) VALUES(10,'seed-10-3');
-INSERT INTO votes(dish_id,visitor_key) VALUES(10,'seed-10-4');
-INSERT INTO votes(dish_id,visitor_key) VALUES(10,'seed-10-5');
-INSERT INTO votes(dish_id,visitor_key) VALUES(10,'seed-10-6');
-INSERT INTO votes(dish_id,visitor_key) VALUES(10,'seed-10-7');
-INSERT INTO votes(dish_id,visitor_key) VALUES(10,'seed-10-8');
-INSERT INTO votes(dish_id,visitor_key) VALUES(10,'seed-10-9');
-INSERT INTO votes(dish_id,visitor_key) VALUES(10,'seed-10-10');
-INSERT INTO votes(dish_id,visitor_key) VALUES(10,'seed-10-11');
-INSERT INTO votes(dish_id,visitor_key) VALUES(10,'seed-10-12');
-INSERT INTO votes(dish_id,visitor_key) VALUES(10,'seed-10-13');
-INSERT INTO votes(dish_id,visitor_key) VALUES(10,'seed-10-14');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(11,'Gourmand33',5,'Belle découverte dans le quartier.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(11,'Gourmand34',2,'La sauce fait la différence.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(11,'Gourmand35',3,'Bon rapport qualité-prix.','published');
-INSERT INTO votes(dish_id,visitor_key) VALUES(11,'seed-11-0');
-INSERT INTO votes(dish_id,visitor_key) VALUES(11,'seed-11-1');
-INSERT INTO votes(dish_id,visitor_key) VALUES(11,'seed-11-2');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(12,'Gourmand36',2,'La sauce fait la différence.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(12,'Gourmand37',3,'Bon rapport qualité-prix.','published');
-INSERT INTO ratings(dish_id,nickname,score,comment,status) VALUES(12,'Gourmand38',4,'Une option sympa pour le midi.','published');
-INSERT INTO votes(dish_id,visitor_key) VALUES(12,'seed-12-0');
-INSERT INTO votes(dish_id,visitor_key) VALUES(12,'seed-12-1');
-INSERT INTO votes(dish_id,visitor_key) VALUES(12,'seed-12-2');
-INSERT INTO votes(dish_id,visitor_key) VALUES(12,'seed-12-3');
-INSERT INTO votes(dish_id,visitor_key) VALUES(12,'seed-12-4');
-INSERT INTO votes(dish_id,visitor_key) VALUES(12,'seed-12-5');
-INSERT INTO votes(dish_id,visitor_key) VALUES(12,'seed-12-6');
-INSERT INTO votes(dish_id,visitor_key) VALUES(12,'seed-12-7');
-INSERT INTO votes(dish_id,visitor_key) VALUES(12,'seed-12-8');
-INSERT INTO votes(dish_id,visitor_key) VALUES(12,'seed-12-9');
 
 -- Comptes de démonstration, un par rôle (local uniquement : à changer avant toute mise en ligne).
 -- admin@foodbattle.local / foodbattle-admin
@@ -225,3 +77,61 @@ INSERT INTO votes(dish_id,visitor_key) VALUES(12,'seed-12-9');
 INSERT INTO users (email, nickname, password_hash, role) VALUES
 ('admin@foodbattle.local', 'Admin',   crypt('foodbattle-admin', gen_salt('bf', 12)), 'admin'),
 ('user@foodbattle.local',  'Testeur', crypt('foodbattle-user',  gen_salt('bf', 12)), 'user');
+
+-- 38 gourmands de démo, auteurs des avis et des votes ci-dessous (mot de passe : foodbattle-demo).
+-- Un seul hash pour tous : hacher 38 fois en bcrypt coût 12 ralentirait l'initialisation d'environ 10 s.
+INSERT INTO users (email, nickname, password_hash)
+SELECT 'gourmand' || n || '@foodbattle.local', 'Gourmand' || n, demo.hash
+FROM generate_series(1, 38) AS n,
+     (SELECT crypt('foodbattle-demo', gen_salt('bf', 12)) AS hash) AS demo;
+
+-- Avis de démonstration, chacun rattaché au compte du gourmand qui l'a écrit.
+INSERT INTO ratings (dish_id, user_id, score, comment, status)
+SELECT r.dish_id, u.id, r.score, r.comment, r.status
+FROM (VALUES
+    (1, 'Gourmand3', 3, 'Belle découverte dans le quartier.', 'published'),
+    (1, 'Gourmand4', 4, 'La sauce fait la différence.', 'published'),
+    (1, 'Gourmand5', 5, 'Bon rapport qualité-prix.', 'published'),
+    (2, 'Gourmand6', 4, 'La sauce fait la différence.', 'published'),
+    (2, 'Gourmand7', 5, 'Bon rapport qualité-prix.', 'published'),
+    (2, 'Gourmand8', 2, 'Une option sympa pour le midi.', 'published'),
+    (3, 'Gourmand9', 5, 'Bon rapport qualité-prix.', 'published'),
+    (3, 'Gourmand10', 2, 'Une option sympa pour le midi.', 'published'),
+    (3, 'Gourmand11', 3, 'Très bon, je reviendrai.', 'pending'),
+    (4, 'Gourmand12', 2, 'Une option sympa pour le midi.', 'published'),
+    (4, 'Gourmand13', 3, 'Très bon, je reviendrai.', 'pending'),
+    (4, 'Gourmand14', 4, 'Belle découverte dans le quartier.', 'published'),
+    (5, 'Gourmand15', 3, 'Très bon, je reviendrai.', 'pending'),
+    (5, 'Gourmand16', 4, 'Belle découverte dans le quartier.', 'published'),
+    (5, 'Gourmand17', 5, 'La sauce fait la différence.', 'published'),
+    (6, 'Gourmand18', 4, 'Belle découverte dans le quartier.', 'published'),
+    (6, 'Gourmand19', 5, 'La sauce fait la différence.', 'published'),
+    (6, 'Gourmand20', 2, 'Bon rapport qualité-prix.', 'published'),
+    (7, 'Gourmand21', 5, 'La sauce fait la différence.', 'published'),
+    (7, 'Gourmand22', 2, 'Bon rapport qualité-prix.', 'published'),
+    (7, 'Gourmand23', 3, 'Une option sympa pour le midi.', 'published'),
+    (8, 'Gourmand24', 2, 'Bon rapport qualité-prix.', 'published'),
+    (8, 'Gourmand25', 3, 'Une option sympa pour le midi.', 'published'),
+    (8, 'Gourmand26', 4, 'Très bon, je reviendrai.', 'pending'),
+    (9, 'Gourmand27', 3, 'Une option sympa pour le midi.', 'published'),
+    (9, 'Gourmand28', 4, 'Très bon, je reviendrai.', 'pending'),
+    (9, 'Gourmand29', 5, 'Belle découverte dans le quartier.', 'published'),
+    (10, 'Gourmand30', 4, 'Très bon, je reviendrai.', 'pending'),
+    (10, 'Gourmand31', 5, 'Belle découverte dans le quartier.', 'published'),
+    (10, 'Gourmand32', 2, 'La sauce fait la différence.', 'published'),
+    (11, 'Gourmand33', 5, 'Belle découverte dans le quartier.', 'published'),
+    (11, 'Gourmand34', 2, 'La sauce fait la différence.', 'published'),
+    (11, 'Gourmand35', 3, 'Bon rapport qualité-prix.', 'published'),
+    (12, 'Gourmand36', 2, 'La sauce fait la différence.', 'published'),
+    (12, 'Gourmand37', 3, 'Bon rapport qualité-prix.', 'published'),
+    (12, 'Gourmand38', 4, 'Une option sympa pour le midi.', 'published')
+) AS r(dish_id, nickname, score, comment, status)
+JOIN users u ON u.nickname = r.nickname;
+
+-- Votes de démonstration : pour chaque plat, les N premiers gourmands votent pour lui.
+INSERT INTO votes (dish_id, user_id)
+SELECT v.dish_id, u.id
+FROM (VALUES (1, 9), (2, 16), (3, 4), (4, 11), (5, 18), (6, 6),
+             (7, 13), (8, 20), (9, 8), (10, 15), (11, 3), (12, 10)) AS v(dish_id, total)
+CROSS JOIN LATERAL generate_series(1, v.total) AS n
+JOIN users u ON u.nickname = 'Gourmand' || n;
