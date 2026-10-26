@@ -30,6 +30,7 @@ class DashboardController extends Controller
 
         $name            = trim($this->postString('name'));
         $price           = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT);
+        $price           = is_float($price) ? round($price, 2) : $price;
         $establishmentId = filter_input(INPUT_POST, 'establishment_id', FILTER_VALIDATE_INT);
         $category        = $this->postString('category');
         $description     = trim($this->postString('description'));
@@ -62,7 +63,7 @@ class DashboardController extends Controller
         $establishmentIds = array_column(Establishment::all(), 'id');
 
         $nameIsValid          = $name !== '' && strlen($name) <= 120;
-        $priceIsValid         = $price !== false && $price !== null && $price >= 0;
+        $priceIsValid         = $price !== false && $price !== null && $price >= 0 && $price <= Dish::MAX_PRICE;
         $categoryIsValid      = array_key_exists($category, Dish::CATEGORIES);
         $establishmentIsValid = in_array($establishmentId, $establishmentIds);
 

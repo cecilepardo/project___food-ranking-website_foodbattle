@@ -103,6 +103,31 @@ req a POST /dashboard/plats/2/modifier --data-urlencode "token=$t" \
 check "admin modifie le prix => enregistré en base (11.90)" [ "$(sql "SELECT price FROM dishes WHERE id=2")" = 11.90 ]
 sql "UPDATE dishes SET price = $old_price WHERE id = 2" >/dev/null   # le nom n'a pas changé : seul le prix est restauré
 
+section "Prix : maximum 999,99 et 2 décimales"
+old_price=$(sql "SELECT price FROM dishes WHERE id=3")
+edit_price() {  # edit_price PRIX : modifie le prix du plat 3 en admin
+    req a GET /dashboard/plats/3/modifier; local t; t=$(token)
+    req a POST /dashboard/plats/3/modifier --data-urlencode "token=$t" \
+        --data-urlencode "name=$(sql "SELECT name FROM dishes WHERE id=3")" --data-urlencode "price=$1"
+}
+edit_price 999.99
+check "prix 999.99 => enregistré" [ "$(sql "SELECT price FROM dishes WHERE id=3")" = 999.99 ]
+edit_price 1000
+check "prix 1000 => refusé proprement" has 'Vérifie le nom et le prix'
+check "… prix inchangé en base" [ "$(sql "SELECT price FROM dishes WHERE id=3")" = 999.99 ]
+edit_price 1e7
+check "prix 1e7 => refusé proprement (plus d'erreur PDO)" bash -c "grep -q 'Vérifie le nom et le prix' <<<\"\$0\" && ! grep -q SQLSTATE <<<\"\$0\"" "$BODY"
+edit_price 12.345
+check "prix 12.345 => arrondi à 12.35 en base" [ "$(sql "SELECT price FROM dishes WHERE id=3")" = 12.35 ]
+check "… et le formulaire affiche 12.35 (valeur réellement enregistrée)" has 'value="12.35"'
+check "champ prix limité à 999.99 côté navigateur" has 'max="999.99"'
+sql "UPDATE dishes SET price = $old_price WHERE id = 3" >/dev/null
+req a GET /dashboard; t=$(token)
+req a POST /dashboard/plats --data-urlencode "token=$t" --data-urlencode "name=Trop cher $RUN" \
+    -d category=burger -d establishment_id=1 -d description=x -d price=1000000
+check "ajout d'un plat à 1000000 => refusé proprement" bash -c "! grep -q SQLSTATE <<<\"\$0\"" "$BODY"
+check "… aucun plat créé" [ "$(sql "SELECT COUNT(*) FROM dishes WHERE name='Trop cher $RUN'")" = 0 ]
+
 section "Suppression d'un plat (admin)"
 DEL=$(sql "INSERT INTO dishes(establishment_id,name,category,price) VALUES(1,'À supprimer $RUN','burger',5) RETURNING id" | head -1)
 sql "INSERT INTO votes(dish_id,user_id) SELECT $DEL, id FROM users WHERE email='user@foodbattle.local'" >/dev/null
@@ -210,15 +235,34 @@ check "recherche de 200 caractères => coupée à 100" \
     bash -c 'grep -q "name=\"q\" value=\"$(printf "x%.0s" {1..100})\"" <<<"$1" && ! grep -q "name=\"q\" value=\"x\{101\}" <<<"$1"' _ "$BODY"
 sql "DELETE FROM users WHERE email LIKE 'fmt-$RUN-%@test.fr'" >/dev/null
 
-section "Moyennes affichées (constat)"
-# Plats dont la moyenne calculée sur tous les avis diffère de celle des seuls avis publiés.
-wrong=$(sql "SELECT COUNT(*) FROM (SELECT dish_id FROM ratings GROUP BY dish_id
-             HAVING ROUND(AVG(score) FILTER (WHERE status = 'published'), 1) IS DISTINCT FROM ROUND(AVG(score), 1)) AS t")
-if [ "$wrong" != 0 ]; then
-    note "$wrong plat(s) : la moyenne affichée compte les avis en attente de modération (Dish::search et Dish::ranking, filtre status manquant)"
+section "Moyennes : seuls les avis publiés comptent"
+# Moyenne attendue d'un plat, au format affiché par score() : « 3,7 », ou « — » sans avis publié.
+expected_average() {
+    sql "SELECT COALESCE(replace(to_char(ROUND(AVG(score), 1), 'FM0.0'), '.', ','), '—')
+         FROM ratings WHERE dish_id = $1 AND status = 'published'"
+}
+D=$(sql "SELECT dish_id FROM ratings GROUP BY dish_id
+         HAVING ROUND(AVG(score) FILTER (WHERE status = 'published'), 1) IS DISTINCT FROM ROUND(AVG(score), 1) LIMIT 1")
+if [ -z "$D" ]; then
+    note "aucun plat dont les avis en attente changeraient la moyenne : test non significatif"
 else
-    check "moyennes calculées sur les seuls avis publiés" true
+    exp=$(expected_average "$D")
+    req x GET /
+    check "accueil : plat $D affiché ★ $exp/5 (avis en attente ignorés)" \
+        bash -c 'grep -A12 "href=\"/plat/$1\"" <<<"$2" | grep -q "★ $3/5"' _ "$D" "$BODY" "$exp"
+    req x GET /classement
+    if grep -q "href=\"/plat/$D\"" <<<"$BODY"; then
+        check "classement : plat $D affiché $exp (avis en attente ignorés)" \
+            bash -c 'grep -A4 "href=\"/plat/$1\"" <<<"$2" | grep -q "<td>$3</td>"' _ "$D" "$BODY" "$exp"
+    fi
 fi
+TOP=$(sql "SELECT d.id FROM dishes d ORDER BY (SELECT COUNT(*) FROM votes WHERE dish_id = d.id) DESC, d.id LIMIT 1")
+kept=$(sql "SELECT string_agg(id::text, ',') FROM ratings WHERE dish_id = $TOP AND status = 'published'")
+[ -n "$kept" ] && sql "UPDATE ratings SET status = 'pending' WHERE id IN ($kept)" >/dev/null
+req x GET /classement
+check "classement : plat sans avis publié => « — » au lieu de « 0,0 »" \
+    bash -c 'grep -A4 "href=\"/plat/$1\"" <<<"$2" | grep -q "<td>—</td>"' _ "$TOP" "$BODY"
+[ -n "$kept" ] && sql "UPDATE ratings SET status = 'published' WHERE id IN ($kept)" >/dev/null
 
 # Nettoyage : les comptes de test de ce script, avec leurs votes et leurs avis.
 # (On supprime d'abord votes et avis : ON DELETE SET NULL les garderait sinon, signés « Compte désactivé ».)

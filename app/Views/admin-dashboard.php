@@ -92,7 +92,7 @@
 
         <label>
             Prix
-            <input type="number" name="price" min="0" step="0.5" data-arrow-step="0.5" required>
+            <input type="number" name="price" min="0" max="999.99" step="0.5" data-arrow-step="0.5" required>
         </label>
 
         <label>

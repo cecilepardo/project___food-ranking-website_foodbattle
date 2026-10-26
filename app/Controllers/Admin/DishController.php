@@ -32,12 +32,14 @@ class DishController extends Controller
 
         $name  = trim($this->postString('name'));
         $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT);
+        $price = is_float($price) ? round($price, 2) : $price;
 
         $isValid = $name !== ''
             && strlen($name) <= 120
             && $price !== false
             && $price !== null
-            && $price >= 0;
+            && $price >= 0
+            && $price <= Dish::MAX_PRICE;
 
         if (!$isValid) {
             $this->showForm($dish, error: 'Vérifie le nom et le prix.');

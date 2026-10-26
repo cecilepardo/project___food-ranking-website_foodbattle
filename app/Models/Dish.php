@@ -17,6 +17,9 @@ class Dish
         'pizza'  => 'Pizzas',
     ];
 
+    /** Prix maximum accepté par les formulaires (la colonne NUMERIC(8,2) planterait au-delà de 999 999,99). */
+    public const MAX_PRICE = 999.99;
+
     /**
      * Plats de la carte, avec leur restaurant, leur note moyenne et leur nombre de votes.
      * Filtres optionnels : nom du plat et catégorie.
@@ -26,7 +29,7 @@ class Dish
         $sql = "SELECT d.*,
                        e.name AS restaurant,
                        e.city,
-                       (SELECT AVG(score) FROM ratings WHERE dish_id = d.id) AS average,
+                       (SELECT AVG(score) FROM ratings WHERE dish_id = d.id AND status = 'published') AS average,
                        (SELECT COUNT(*)   FROM votes   WHERE dish_id = d.id) AS votes
                 FROM dishes d
                 JOIN establishments e ON e.id = d.establishment_id
@@ -97,7 +100,7 @@ class Dish
                     d.category,
                     e.name AS restaurant,
                     (SELECT COUNT(*)   FROM votes   WHERE dish_id = d.id) AS votes,
-                    (SELECT AVG(score) FROM ratings WHERE dish_id = d.id) AS average
+                    (SELECT AVG(score) FROM ratings WHERE dish_id = d.id AND status = \'published\') AS average
              FROM dishes d
              JOIN establishments e ON e.id = d.establishment_id
              ORDER BY votes DESC, d.id

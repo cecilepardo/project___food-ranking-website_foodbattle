@@ -2,6 +2,16 @@
 
 Migration du prototype `app/` vers une architecture MVC. Le comportement est identique à l'ancien site, bugs compris : chaque bug connu est marqué `BUG connu` dans le code.
 
+## Ressources
+
+- **Maquettes et design system** : [Figma](https://www.figma.com/design/vKmUDbfqhsOdcx5HXXaDwa)
+  (thèmes sombre et clair, composants, page d'accueil)
+- **Suivi des tâches** : [Trello](https://trello.com/b/RobkiE9o/foodbattle)
+
+Le Figma sert de référence visuelle. Les valeurs réellement utilisées par le site
+(couleurs, polices, espacements) sont définies dans `public/assets/css/variables.css`.
+Si l'un change, on met l'autre à jour.
+
 ## Lancer le projet
 
 ```
