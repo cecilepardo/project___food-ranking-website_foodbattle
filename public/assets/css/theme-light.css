@@ -1,0 +1,30 @@
+/* ==========================================================================
+   THÈME CLAIR
+   S'applique quand <html> porte data-theme="light" (choix mémorisé par cookie).
+   Ne redéfinit que les variables qui changent par rapport à theme-dark.css :
+   les autres (bouton principal, puce active, bouton Supprimer, succès)
+   gardent leur valeur du thème sombre.
+   ========================================================================== */
+
+:root[data-theme="light"] {
+    color-scheme: light;
+
+    /* Fonds */
+    --color-bg: #fff8f1;
+    --color-surface: #ffffff;
+    --color-surface-raised: #ffebd6;
+
+    /* Bordures */
+    --color-border: #ebd5bf;
+
+    /* Texte */
+    --color-text: #1f150e;
+    --color-text-muted: #6b4a33;
+
+    /* Couleurs de la marque : plus foncées pour rester lisibles sur fond clair */
+    --color-brand: #c24e14;
+    --color-highlight: #8a4b00;
+
+    /* Erreurs */
+    --color-danger: #c62828;
+}

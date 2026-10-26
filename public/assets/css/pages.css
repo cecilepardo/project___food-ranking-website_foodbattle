@@ -7,44 +7,79 @@
 /* Accueil : bandeau d'introduction
    -------------------------------------------------------------------------- */
 
+/* Fond : une lueur orange (la couleur de la marque à 28 %) qui part du bord gauche,
+   posée sur la couleur de surface. Les deux s'adaptent au thème. */
 .hero {
-    margin-bottom: var(--space-xl);
-    padding: 35px 24px;
-    background: var(--color-bg-hero);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xl);
+    padding: var(--space-2xl);
+    border-radius: var(--radius-md);
+    background:
+        radial-gradient(750px 115px at 0 50%, color-mix(in srgb, var(--color-brand) 28%, transparent), transparent),
+        var(--color-surface);
+}
+
+.hero__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    max-width: 620px;
 }
 
 .hero__eyebrow {
+    color: var(--color-highlight);
     font-size: var(--font-size-small);
-    color: var(--color-text-eyebrow);
+    font-weight: var(--font-weight-bold);
 }
 
 .hero__title {
-    margin: 14px 0;
+    margin: 0;
     font-size: var(--font-size-hero);
 }
 
 .hero__text {
-    margin-bottom: 25px;
+    max-width: 520px;
+    margin: 0;
+    color: var(--color-text-muted);
+}
+
+.hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+}
+
+/* Même logo que l'en-tête (logo.png / logo-light.png), en grand */
+.hero__logo {
+    width: 400px;
+    height: 160px;
 }
 
 
-/* Accueil : barre de recherche
+/* Accueil : recherche + catégorie
    -------------------------------------------------------------------------- */
 
 .filters {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 12px;
-    padding: 12px;
-    background: var(--color-bg-surface);
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
 }
 
-.filters input {
-    width: 300px;
+/* Le champ de recherche prend toute la place restante */
+.filters__search {
+    flex: 1;
+    min-width: 240px;
 }
 
-.filters__submit {
-    margin-top: var(--space-lg);
+/* Les <label> ont une marge par défaut (base.css) : inutile sur une ligne de filtres */
+.filters__field,
+.filters__select {
+    margin: 0;
 }
 
 
@@ -53,21 +88,30 @@
 
 .dish-detail {
     display: flex;
-    gap: 25px;
+    gap: var(--space-lg);
     padding: var(--space-lg);
-    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
 }
 
 .dish-detail__image {
     width: 45%;
     height: 330px;
+    border-radius: var(--radius-md);
     object-fit: cover;
+}
+
+.dish-detail__body {
+    flex: 1;
 }
 
 .review {
     margin: var(--space-md) 0;
-    padding: var(--space-md);
-    background: var(--color-bg-surface);
+    padding: var(--space-md) 20px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
 }
 
 
@@ -75,8 +119,11 @@
    -------------------------------------------------------------------------- */
 
 .subnav {
-    padding: var(--space-md);
-    background: var(--color-bg-surface);
+    padding: 12px 20px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface);
+    font-weight: var(--font-weight-extrabold);
 }
 
 .subnav a {
@@ -88,12 +135,20 @@
    -------------------------------------------------------------------------- */
 
 @media (max-width: 700px) {
-    .filters {
-        flex-wrap: wrap;
+    /* Le logo passe au-dessus du texte */
+    .hero {
+        flex-direction: column-reverse;
+        align-items: flex-start;
+        padding: var(--space-lg);
     }
 
-    .filters input {
-        width: 220px;
+    .hero__title {
+        font-size: var(--font-size-h1);
+    }
+
+    .hero__logo {
+        width: 200px;
+        height: 80px;
     }
 
     .dish-detail {

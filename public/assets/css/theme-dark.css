@@ -1,0 +1,46 @@
+/* ==========================================================================
+   THÈME SOMBRE (thème par défaut)
+   Défini sur :root, il s'applique tant que <html> n'a pas data-theme="light".
+   theme-light.css redéfinit les mêmes variables pour le thème clair.
+   Les contrastes texte/fond respectent WCAG AA (4,5:1), voir la maquette.
+   ========================================================================== */
+
+:root {
+    /* Indique au navigateur que la page est sombre : il adapte ses propres
+       éléments (barres de défilement, liste déroulante d'un <select>…). */
+    color-scheme: dark;
+
+    /* Fonds, du plus profond au plus en relief */
+    --color-bg: #140f0b;             /* fond de page, en-tête */
+    --color-surface: #261b14;        /* cartes, champs, pied de page */
+    --color-surface-raised: #33251b; /* tags, survol */
+
+    /* Bordures */
+    --color-border: #45321f;
+
+    /* Texte */
+    --color-text: #fff4e8;           /* texte principal */
+    --color-text-muted: #c4ae9a;     /* texte secondaire */
+
+    /* Couleurs de la marque */
+    --color-brand: #ff7b30;          /* logo, décor, lueur du bandeau */
+    --color-highlight: #ffbe4a;      /* prix, lien actif, bouton secondaire */
+
+    /* Puce ou élément actif : fond jaune, texte foncé */
+    --color-highlight-bg: #ffbe4a;
+    --color-on-highlight: #140f0b;
+
+    /* Bouton principal : fond orange, texte blanc */
+    --color-action: #c24e14;
+    --color-on-action: #ffffff;      /* aussi utilisé sur --color-danger-bg */
+
+    /* Erreurs */
+    --color-danger: #ff5416;         /* texte d'un message d'erreur */
+    --color-danger-bg: #c62828;      /* fond du bouton Supprimer */
+
+    /* Message de succès : absent de la maquette.
+       On le calcule à partir de la palette (15 % de highlight dans la surface)
+       plutôt que d'inventer un vert. Comme il s'appuie sur d'autres variables,
+       il s'adapte tout seul au thème clair : pas besoin de le redéfinir. */
+    --color-success-bg: color-mix(in srgb, var(--color-highlight) 15%, var(--color-surface));
+}

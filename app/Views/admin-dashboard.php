@@ -19,7 +19,7 @@
 </nav>
 
 <?php if ($error): ?>
-    <p role="alert"><?= e($error) ?></p>
+    <p class="message message--error" role="alert"><?= e($error) ?></p>
 <?php endif; ?>
 
 <?php if ($added): ?>
@@ -52,7 +52,7 @@
                     <a href="/dashboard/plats/<?= (int) $dish['id'] ?>/modifier">Modifier</a>
                     <form class="inline-form" method="post" action="/dashboard/plats/<?= (int) $dish['id'] ?>/supprimer" data-delete>
                         <?= csrf_field() ?>
-                        <button class="btn btn--muted">Supprimer</button>
+                        <button class="btn btn--danger">Supprimer</button>
                     </form>
                 </td>
             </tr>

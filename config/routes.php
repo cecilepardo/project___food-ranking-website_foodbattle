@@ -13,6 +13,7 @@ use App\Controllers\AuthController;
 use App\Controllers\DishController;
 use App\Controllers\HomeController;
 use App\Controllers\RankingController;
+use App\Controllers\ThemeController;
 use App\Core\Router;
 use App\Middlewares\RequireAdmin;
 use App\Middlewares\RequireGuest;
@@ -25,6 +26,9 @@ return function (Router $router): void {
     $router->get('/',           [HomeController::class, 'index']);       // ancien index.php
     $router->get('/classement', [RankingController::class, 'index']);    // ancien classement.php
     $router->get('/plat/{id}',  [DishController::class, 'show']);        // ancien plat.php
+
+    // Préférence d'affichage : ouverte à tous, connecté ou non (cookie, pas de compte nécessaire).
+    $router->post('/theme', [ThemeController::class, 'toggle']);
 
     // Participer (voter, donner son avis) : réservé aux utilisateurs connectés.
     // /participer est un lien GET : RequireLogin le mémorise, on revient donc sur le plat après la connexion.

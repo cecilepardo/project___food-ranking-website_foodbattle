@@ -1,5 +1,5 @@
 <footer class="site-footer">
-    FoodBattle — Le meilleur du quartier, selon vous.
+    <p class="site-footer__title">FoodBattle | Le meilleur du quartier, selon vous.</p>
     <small class="site-footer__note">
         Prototype pédagogique local · établissements, avis et données fictifs · photographies d’illustration
     </small>

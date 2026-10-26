@@ -207,7 +207,7 @@ req s GET '/?q=Smash'
 check "recherche « Smash » => toujours fonctionnelle" has 'Le Double Smash'
 req s GET "/?q=$(printf 'x%.0s' {1..200})"
 check "recherche de 200 caractères => coupée à 100" \
-    bash -c 'grep -q "value=\"$(printf "x%.0s" {1..100})\"" <<<"$1" && ! grep -q "x\{101\}" <<<"$1"' _ "$BODY"
+    bash -c 'grep -q "name=\"q\" value=\"$(printf "x%.0s" {1..100})\"" <<<"$1" && ! grep -q "name=\"q\" value=\"x\{101\}" <<<"$1"' _ "$BODY"
 sql "DELETE FROM users WHERE email LIKE 'fmt-$RUN-%@test.fr'" >/dev/null
 
 section "Moyennes affichées (constat)"

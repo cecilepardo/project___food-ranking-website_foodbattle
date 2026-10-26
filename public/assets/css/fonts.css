@@ -1,0 +1,25 @@
+/* ==========================================================================
+   POLICES
+   Hébergées dans le projet (public/assets/fonts) : aucun appel à un service externe.
+   Licence SIL Open Font License : voir OFL-Bungee.txt et OFL-Nunito.txt.
+   Sous-ensemble "latin" : couvre le français (accents, ç, œ, €).
+   ========================================================================== */
+
+/* Bungee : titres. Une seule graisse (400). */
+@font-face {
+    font-family: "Bungee";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("../fonts/bungee-latin-400-normal.woff2") format("woff2");
+}
+
+/* Nunito : texte. Police variable : un seul fichier couvre
+   toutes les graisses de 200 à 1000 (on utilise 400, 700, 800, 900). */
+@font-face {
+    font-family: "Nunito";
+    font-style: normal;
+    font-weight: 200 1000;
+    font-display: swap;
+    src: url("../fonts/nunito-latin-wght-normal.woff2") format("woff2");
+}
