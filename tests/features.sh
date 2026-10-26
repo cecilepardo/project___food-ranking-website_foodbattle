@@ -249,7 +249,7 @@ else
     exp=$(expected_average "$D")
     req x GET /
     check "accueil : plat $D affiché ★ $exp/5 (avis en attente ignorés)" \
-        bash -c 'grep -A12 "href=\"/plat/$1\"" <<<"$2" | grep -q "★ $3/5"' _ "$D" "$BODY" "$exp"
+        bash -c 'grep -A14 "href=\"/plat/$1\"" <<<"$2" | grep -q "$3/5 ·"' _ "$D" "$BODY" "$exp"
     req x GET /classement
     if grep -q "href=\"/plat/$D\"" <<<"$BODY"; then
         check "classement : plat $D affiché $exp (avis en attente ignorés)" \
