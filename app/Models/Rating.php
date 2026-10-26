@@ -40,8 +40,19 @@ class Rating
              FROM ratings r
              JOIN dishes d ON d.id = r.dish_id
              LEFT JOIN users u ON u.id = r.user_id
-             ORDER BY r.id DESC'
+             ORDER BY r.status = \'pending\' DESC, r.id DESC'
         )->fetchAll();
+    }
+
+    /**
+     * Publie ou refuse un avis. Renvoie false si l'avis n'existe pas.
+     */
+    public static function setStatus(int $id, string $status): bool
+    {
+        $statement = Database::get()->prepare('UPDATE ratings SET status = ? WHERE id = ?');
+        $statement->execute([$status, $id]);
+
+        return $statement->rowCount() > 0;
     }
 
     /**
@@ -49,10 +60,9 @@ class Rating
      */
     public static function create(int $dishId, int $userId, int $score, string $comment): bool
     {
-        // BUG connu : l'avis est publié directement, sans passer par la modération.
         $statement = Database::get()->prepare(
             "INSERT INTO ratings (dish_id, user_id, score, comment, status)
-             VALUES (?, ?, ?, ?, 'published')
+             VALUES (?, ?, ?, ?, 'pending')
              ON CONFLICT (dish_id, user_id) DO NOTHING"
         );
         $statement->execute([$dishId, $userId, $score, $comment]);

@@ -17,6 +17,9 @@ new_account() {  # new_account JAR : inscrit un compte de test (fx-RUN-JAR@test.
     step1 "$1" "fx-$RUN-$1@test.fr"
     register "$1" "fx-$RUN-$1@test.fr" "Fx$RUN$1" motdepasse
 }
+publish_test_reviews() {  # publie les avis des comptes de test, comme le ferait un modérateur
+    sql "UPDATE ratings SET status = 'published' WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'fx-$RUN-%')" >/dev/null
+}
 
 section "Votes réservés aux comptes (PR #8 adaptée)"
 DISH=5
@@ -55,6 +58,7 @@ section "Avis rattachés au compte (et corrections de la PR #3)"
 new_account x
 rate x 1 4 "<script>alert('xss')</script>"
 check "avis avec <script> => enregistré (302)" [ "$CODE" = 302 ]
+publish_test_reviews
 req x GET /plat/1
 check "XSS : commentaire affiché échappé" has "&lt;script&gt;alert(&#039;xss&#039;)&lt;/script&gt;"
 check "XSS : aucune balise <script>alert exécutable" hasnt "<script>alert('xss')"
@@ -66,6 +70,7 @@ check "message « Tu as déjà donné ton avis sur ce plat. » affiché" has 'Tu
 check "un seul avis du compte en base pour ce plat" [ "$(sql "SELECT COUNT(*) FROM ratings r JOIN users u ON u.id = r.user_id WHERE r.dish_id=1 AND u.email='fx-$RUN-x@test.fr'")" = 1 ]
 req x GET /plat/4; t=$(token)
 req x POST /plat/4/avis --data-urlencode "token=$t" --data "nickname=Admin&score=3&comment=usurpation"
+publish_test_reviews
 req x GET /plat/4
 check "pseudo envoyé dans le formulaire (Admin) ignoré : l'avis porte le pseudo du compte" \
     bash -c 'grep -q "Fx[0-9]*x · 3/5" <<<"$1" && ! grep -q "Admin · 3/5" <<<"$1"' _ "$BODY"
@@ -81,6 +86,7 @@ rate x 3 3 "$(printf 'c%.0s' {1..1001})"
 check "commentaire de 1001 caractères => refusé (422)" [ "$CODE" = 422 ]
 new_account d
 rate d 6 2 "Avis du compte supprime"
+publish_test_reviews
 sql "DELETE FROM users WHERE email = 'fx-$RUN-d@test.fr'" >/dev/null
 req d GET /plat/6
 check "compte supprimé => son avis reste, signé « Compte désactivé »" has 'Compte désactivé · 2/5'
@@ -90,6 +96,46 @@ first=$(grep -o '<a href="/plat/[0-9]*">[^<]*</a>' <<<"$BODY" | head -1 | sed 's
 check "classement : le plat le plus voté est en tête ($top)" [ "$first" = "$(sed "s/'/\&#039;/g" <<<"$top")" ]
 check "contrainte prix >= 0 en base" grep -q 'dishes_price_check' <<<"$(sql "UPDATE dishes SET price=-1 WHERE id=1")"
 check "contrainte catégorie en base" grep -q 'dishes_category_check' <<<"$(sql "UPDATE dishes SET category='kebab' WHERE id=1")"
+
+section "Modération des avis"
+new_account m
+rate m 7 4 "Avis a moderer $RUN"
+check "nouvel avis => 302 vers /plat/7?avis=1" [ "$CODE" = 302 -a "$LOC" = "/plat/7?avis=1" ]
+req m GET "/plat/7?avis=1"
+check "message « publié après validation » affiché" has 'ton avis sera publié après validation'
+check "… mais l'avis n'est pas encore visible" hasnt "Avis a moderer $RUN"
+RID=$(sql "SELECT id FROM ratings WHERE comment = 'Avis a moderer $RUN'")
+check "avis enregistré en attente (pending)" [ "$(sql "SELECT status FROM ratings WHERE id=$RID")" = pending ]
+login a admin@foodbattle.local foodbattle-admin
+req a GET /moderation
+check "page de modération : bouton Publier pour l'avis" has "action=\"/moderation/$RID/publier\""
+check "page de modération : bouton Refuser pour l'avis" has "action=\"/moderation/$RID/refuser\""
+check "avis en attente listé en premier" [ "$(grep -o 'action="/moderation/[0-9]*/' <<<"$BODY" | head -1)" = "action=\"/moderation/$RID/" ]
+t=$(token)
+req a POST "/moderation/$RID/publier"
+check "publier sans jeton CSRF => 403" [ "$CODE" = 403 ]
+req a POST "/moderation/$RID/publier" --data-urlencode "token=$t"
+check "admin publie => 302 vers /moderation?fait=published" [ "$CODE" = 302 -a "$LOC" = "/moderation?fait=published" ]
+check "… statut published en base" [ "$(sql "SELECT status FROM ratings WHERE id=$RID")" = published ]
+req x GET /plat/7
+check "… avis visible sur la fiche du plat" has "Avis a moderer $RUN"
+req a GET "/moderation?fait=published"
+check "message « L'avis a été publié. »" has "L&#039;avis a été publié.\|L'avis a été publié."
+check "avis publié : plus de bouton Publier, bouton Refuser toujours là" \
+    bash -c "! grep -q 'action=\"/moderation/$RID/publier\"' <<<\"\$0\" && grep -q 'action=\"/moderation/$RID/refuser\"' <<<\"\$0\"" "$BODY"
+t=$(token)
+req a POST "/moderation/$RID/refuser" --data-urlencode "token=$t"
+check "admin refuse => 302 vers /moderation?fait=rejected" [ "$CODE" = 302 -a "$LOC" = "/moderation?fait=rejected" ]
+check "… statut rejected en base" [ "$(sql "SELECT status FROM ratings WHERE id=$RID")" = rejected ]
+req x GET /plat/7
+check "… avis retiré de la fiche du plat" hasnt "Avis a moderer $RUN"
+login u user@foodbattle.local foodbattle-user
+req u GET /dashboard; t=$(token)
+req u POST "/moderation/$RID/publier" --data-urlencode "token=$t"
+check "user POST /moderation/…/publier => 403" [ "$CODE" = 403 ]
+req a GET /moderation; t=$(token)
+req a POST "/moderation/999999/publier" --data-urlencode "token=$t"
+check "avis inexistant => 404" [ "$CODE" = 404 ]
 
 section "PR #3 × auth — modification du prix réservée à l'admin"
 login u user@foodbattle.local foodbattle-user
