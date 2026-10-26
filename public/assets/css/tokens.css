@@ -1,0 +1,54 @@
+/* ==========================================================================
+   TOKENS
+   Valeurs communes aux deux thèmes : typographie, espacements, arrondis.
+   Les couleurs sont dans theme-dark.css (thème par défaut) et theme-light.css.
+   Source : maquette Figma "FoodBattle — Design system", page Fondations.
+   ========================================================================== */
+
+:root {
+    /* Familles de polices
+       Bungee pour les titres, Nunito pour tout le reste.
+       Les polices de secours s'affichent le temps du chargement. */
+    --font-display: "Bungee", "Arial Black", sans-serif;
+    --font-body: "Nunito", Arial, sans-serif;
+
+    /* Tailles de texte
+       En rem (1rem = 16px par défaut) : le texte suit la taille choisie
+       par l'utilisateur dans son navigateur, ce qui aide l'accessibilité. */
+    --font-size-hero: 3rem;          /* 48px : titre du bandeau d'accueil */
+    --font-size-h1: 2rem;            /* 32px : titre de page, "À la carte" */
+    --font-size-h2: 1.5rem;          /* 24px : sous-titre */
+    --font-size-card-title: 1.25rem; /* 20px : nom d'un plat */
+    --font-size-body: 1rem;          /* 16px : texte courant, boutons */
+    --font-size-small: 0.8125rem;    /* 13px : établissement, note, tag */
+
+    /* Graisses (Nunito est chargée dans ces quatre épaisseurs) */
+    --font-weight-regular: 400;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+    --font-weight-black: 900;
+
+    /* Hauteurs de ligne */
+    --line-height-tight: 1.1;        /* titres Bungee */
+    --line-height-snug: 1.25;        /* titre de carte */
+    --line-height-base: 1.5;         /* texte courant */
+
+    /* Espacement entre les lettres des titres Bungee (1 % dans Figma) */
+    --letter-spacing-display: 0.01em;
+
+    /* Espacements (marges, padding, écarts entre éléments) */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 40px;
+    --space-2xl: 56px;
+
+    /* Arrondis */
+    --radius-md: 16px;               /* cartes, bandeau */
+    --radius-pill: 999px;            /* boutons, tags, champs : bouts ronds */
+
+    /* Largeurs (le point de rupture mobile, 700px, est écrit dans chaque @media :
+       une variable CSS ne peut pas être utilisée dans une media query) */
+    --page-max-width: 1200px;
+}

@@ -5,6 +5,10 @@
  * @var array $dish
  */
 $dishUrl = '/plat/' . (int) $dish['id'];
+$votes   = (int) $dish['votes'];
+
+// "4,6/5" ou "—" si personne n'a encore noté le plat
+$rating = $dish['average'] ? score($dish['average']) . '/5' : '—';
 ?>
 <article class="card">
     <img
@@ -21,16 +25,18 @@ $dishUrl = '/plat/' . (int) $dish['id'];
             <a href="<?= $dishUrl ?>"><?= e($dish['name']) ?></a>
         </h3>
 
-        <p class="card__text"><?= e($dish['restaurant']) ?> · <?= e($dish['city']) ?></p>
+        <p class="card__meta"><?= e($dish['restaurant']) ?> · <?= e($dish['city']) ?></p>
         <p class="card__text"><?= e($dish['description']) ?></p>
 
-        <p class="card__text">
-            <strong><?= euro($dish['price']) ?></strong>
-            <span class="card__rating">★ <?= $dish['average'] ? score($dish['average']) : '—' ?>/5</span>
+        <p class="card__footer">
+            <strong class="card__price"><?= euro($dish['price']) ?></strong>
+            <span class="card__rating">
+                <!-- L'étoile est décorative : un lecteur d'écran lirait "étoile noire" -->
+                <span aria-hidden="true">★</span>
+                <?= e($rating) ?> · <?= $votes ?> <?= $votes > 1 ? 'votes' : 'vote' ?>
+            </span>
         </p>
 
-        <p class="card__text"><?= (int) $dish['votes'] ?> vote(s)</p>
-
-        <a class="btn" href="<?= $dishUrl ?>">Découvrir et voter</a>
+        <a class="btn btn--block card__action" href="<?= $dishUrl ?>">Découvrir et voter</a>
     </div>
 </article>

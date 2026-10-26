@@ -18,7 +18,7 @@ $dishId = (int) $dish['id'];
 <section class="dish-detail">
     <?= View::partial('dish-photo', ['dish' => $dish]) ?>
 
-    <div>
+    <div class="dish-detail__body">
         <span class="tag"><?= e($dish['category']) ?></span>
         <h1><?= e($dish['name']) ?></h1>
         <h2><?= e($dish['restaurant']) ?></h2>

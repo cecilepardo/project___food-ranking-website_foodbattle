@@ -11,7 +11,7 @@
 <p>Saisis ton email : on te connecte si tu as déjà un compte, sinon on t'aide à en créer un.</p>
 
 <?php if ($error): ?>
-    <p role="alert"><?= e($error) ?></p>
+    <p class="message message--error" role="alert"><?= e($error) ?></p>
 <?php endif; ?>
 
 <form class="form-panel" method="post" action="/connexion">

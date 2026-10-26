@@ -5,25 +5,101 @@
    ========================================================================== */
 
 
-/* Bouton
+/* Texte réservé aux lecteurs d'écran
+   Masque visuellement un élément sans le retirer de l'accessibilité
+   (ex. le <label> du champ de recherche, absent de la maquette). */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+
+/* Icône
+   Le fichier SVG sert de masque (sa forme), la couleur vient de currentColor :
+   l'icône prend la couleur du texte de son parent, donc s'adapte au thème.
+   Toujours avec aria-hidden="true" : l'icône est décorative.
+   -------------------------------------------------------------------------- */
+
+.icon {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    background-color: currentColor;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+}
+
+.icon--search {
+    width: 18px;
+    height: 18px;
+    mask-image: url("../img/search.svg");
+}
+
+.icon--sun {
+    mask-image: url("../img/sun.svg");
+}
+
+.icon--moon {
+    mask-image: url("../img/moon.svg");
+}
+
+
+/* Bouton (en pilule)
+   La bordure de 2px existe sur toutes les variantes (transparente par défaut)
+   pour que tous les boutons aient exactement la même hauteur.
    -------------------------------------------------------------------------- */
 
 .btn {
-    display: inline-block;
-    padding: var(--space-sm) var(--space-md);
-    border: 0;
-    border-radius: var(--radius-md);
-    background: var(--color-primary);
-    color: #fff;
-    font-size: var(--font-size-base);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px var(--space-lg);
+    border: 2px solid transparent;
+    border-radius: var(--radius-pill);
+    background: var(--color-action);
+    color: var(--color-on-action);
+    font: inherit;
+    font-weight: var(--font-weight-black);
+    line-height: 1;
     text-decoration: none;
     cursor: pointer;
 }
 
-.btn--muted {
-    margin-left: 8px;
-    padding: var(--space-xs);
-    background: var(--color-bg-muted-button);
+/* Survol : la couleur du bouton, assombrie de 15 % */
+.btn:hover {
+    background: color-mix(in srgb, var(--color-action) 85%, black);
+}
+
+/* Contour jaune, fond transparent */
+.btn--secondary {
+    border-color: var(--color-highlight);
+    background: transparent;
+    color: var(--color-highlight);
+}
+
+.btn--secondary:hover {
+    background: var(--color-surface-raised);
+}
+
+/* Suppression (dashboard) */
+.btn--danger {
+    background: var(--color-danger-bg);
+}
+
+.btn--danger:hover {
+    background: color-mix(in srgb, var(--color-danger-bg) 85%, black);
+}
+
+/* Pleine largeur (bouton d'une carte) */
+.btn--block {
+    display: flex;
+    width: 100%;
 }
 
 /* Formulaire réduit à un bouton (ex. Supprimer), affiché sur la même ligne que le lien voisin. */
@@ -36,76 +112,195 @@
    -------------------------------------------------------------------------- */
 
 .tag {
-    padding: 4px 7px;
-    background: var(--color-bg-tag);
+    display: inline-block;
+    padding: var(--space-xs) 12px;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-raised);
+    color: var(--color-highlight);
     font-size: var(--font-size-small);
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+
+/* Champ de recherche avec loupe
+   -------------------------------------------------------------------------- */
+
+.search-field {
+    position: relative;
+    margin: 0;
+}
+
+/* La loupe est posée par-dessus le champ, centrée verticalement */
+.search-field__icon {
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    color: var(--color-text-muted);
+    transform: translateY(-50%);
+    pointer-events: none;   /* un clic sur la loupe atteint quand même le champ */
+}
+
+/* Le padding gauche laisse la place à la loupe */
+.search-field__input {
+    width: 100%;
+    margin: 0;
+    padding-left: 48px;
+}
+
+
+/* Titre de section avec compteur ("À la carte" … "6 plats trouvés")
+   -------------------------------------------------------------------------- */
+
+.section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-md);
+    margin: var(--space-xl) 0 var(--space-lg);
+}
+
+/* Un <h2> dans le HTML, mais à la taille d'un h1 dans la maquette */
+.section-header__title {
+    margin: 0;
+    font-size: var(--font-size-h1);
+}
+
+.section-header__count {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-bold);
+}
+
+
+/* Grille de cartes
+   Autant de colonnes de 300px minimum que la largeur le permet :
+   3 sur ordinateur, 2 sur tablette, 1 sur mobile, sans media query.
+   -------------------------------------------------------------------------- */
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-lg);
 }
 
 
 /* Carte d'un plat
    -------------------------------------------------------------------------- */
 
-.card-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 17px;
-}
-
 .card {
-    background: var(--color-bg-surface);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;   /* l'image suit les coins arrondis */
     border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
 }
 
 .card__image {
+    display: block;
     width: 100%;
-    height: 185px;
+    height: 200px;
     object-fit: cover;
 }
 
+/* flex: 1 : le corps occupe toute la hauteur restante de la carte */
 .card__body {
-    padding: var(--space-md);
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 20px;
 }
 
 .card__title {
-    margin: 12px 0;
+    margin: 0;
+}
+
+.card__title a {
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.card__title a:hover {
+    color: var(--color-highlight);
+}
+
+/* Établissement · ville */
+.card__meta {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-bold);
 }
 
 .card__text {
-    font-size: var(--font-size-base);
-    line-height: 1.45;
+    margin: 0;
+    color: var(--color-text-muted);
+}
+
+/* Ligne prix (à gauche) / note (à droite) */
+.card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.card__price {
+    color: var(--color-highlight);
+    font-weight: var(--font-weight-extrabold);
 }
 
 .card__rating {
-    margin-left: var(--space-md);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-bold);
+}
+
+/* margin-top: auto pousse le bouton en bas de la carte :
+   les boutons d'une même ligne restent alignés, même si les textes ont des longueurs différentes */
+.card__action {
+    margin-top: auto;
 }
 
 
-/* Formulaire dans un encadré blanc
+/* Encadrés : formulaire et bloc repliable (<details>)
    -------------------------------------------------------------------------- */
 
 .form-panel {
     max-width: 550px;
     padding: var(--space-lg);
-    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
 }
-
-
-/* Encadré repliable (<details>)
-   -------------------------------------------------------------------------- */
 
 .panel {
     margin: var(--space-lg) 0;
-    padding: 18px;
-    background: var(--color-bg-surface);
+    padding: 20px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
 }
 
 
-/* Message de confirmation
+/* Message de confirmation / d'erreur
    -------------------------------------------------------------------------- */
 
 .message {
     padding: var(--space-md);
-    background: var(--color-bg-success);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-success-bg);
+}
+
+.message--error {
+    border-color: var(--color-danger);
+    background: var(--color-surface);
+    color: var(--color-danger);
+    font-weight: var(--font-weight-bold);
 }
 
 
@@ -116,7 +311,7 @@
     width: 100%;
     margin: var(--space-lg) 0;
     border-collapse: collapse;
-    background: var(--color-bg-surface);
+    background: var(--color-surface);
 }
 
 .table th,
@@ -127,7 +322,8 @@
 }
 
 .table th {
-    background: var(--color-bg-tag);
+    background: var(--color-surface-raised);
+    font-weight: var(--font-weight-extrabold);
 }
 
 
@@ -135,12 +331,8 @@
    -------------------------------------------------------------------------- */
 
 @media (max-width: 700px) {
-    .card-grid {
-        grid-template-columns: 1fr;
-    }
-
     .table {
-        font-size: 13px;
+        font-size: var(--font-size-small);
     }
 
     .table th,

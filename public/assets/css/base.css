@@ -1,6 +1,7 @@
 /* ==========================================================================
    BASE
    Styles par défaut des balises HTML (sans classe).
+   Uniquement des variables : aucune couleur ni taille écrite en dur.
    ========================================================================== */
 
 * {
@@ -9,14 +10,31 @@
 
 body {
     margin: 0;
-    font-family: var(--font-family);
+    font-family: var(--font-body);
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-base);
     color: var(--color-text);
-    background: var(--color-bg-page);
+    background: var(--color-bg);
+}
+
+img {
+    max-width: 100%;
 }
 
 
 /* Titres
    -------------------------------------------------------------------------- */
+
+/* Bungee n'existe qu'en une seule graisse (400). Sans font-weight explicite,
+   le navigateur mettrait les titres en gras (son style par défaut)
+   et "fabriquerait" un faux gras déformé. */
+h1,
+h2 {
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-display);
+}
 
 h1 {
     font-size: var(--font-size-h1);
@@ -24,14 +42,36 @@ h1 {
 
 h2 {
     margin-top: var(--space-xl);
+    font-size: var(--font-size-h2);
+}
+
+/* h3 = nom d'un plat (carte, fiche) : en Nunito, pas en Bungee */
+h3 {
+    font-size: var(--font-size-card-title);
+    font-weight: var(--font-weight-black);
+    line-height: var(--line-height-snug);
 }
 
 
-/* Liens
+/* Texte
    -------------------------------------------------------------------------- */
 
 a {
-    color: var(--color-link);
+    color: var(--color-highlight);
+}
+
+strong {
+    font-weight: var(--font-weight-extrabold);
+}
+
+small {
+    font-size: var(--font-size-small);
+}
+
+/* Contour visible quand on navigue au clavier (Tab), pas au clic souris */
+:focus-visible {
+    outline: 2px solid var(--color-highlight);
+    outline-offset: 2px;
 }
 
 
@@ -41,24 +81,35 @@ a {
 label {
     display: block;
     margin: var(--space-sm) 0;
-    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
 }
 
+/* Champs en pilule, comme le champ de recherche de la maquette */
 input,
 select,
 textarea {
     display: block;
     max-width: 100%;
     margin-top: var(--space-xs);
-    padding: 9px;
-    border: 1px solid var(--color-border-input);
-    border-radius: var(--radius-sm);
+    padding: 14px 20px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface);
+    color: var(--color-text);
     font: inherit;
+    font-weight: var(--font-weight-regular);
 }
 
+/* Le texte d'exemple doit rester lisible (contraste AA) dans les deux thèmes */
+::placeholder {
+    color: var(--color-text-muted);
+}
+
+/* Une zone de texte sur plusieurs lignes : une pilule serait déformée */
 textarea {
     width: 440px;
     height: 95px;
+    border-radius: var(--radius-md);
 }
 
 summary {

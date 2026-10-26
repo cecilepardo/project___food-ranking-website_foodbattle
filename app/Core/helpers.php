@@ -53,6 +53,37 @@ function image_for(string $category): string
     return "https://images.pexels.com/photos/{$id}/pexels-photo-{$id}.jpeg?auto=compress&cs=tinysrgb&w=800";
 }
 
+/**
+ * URL d'un fichier de public/ avec sa date de modification en paramètre (?v=…).
+ * Quand le fichier change, l'URL change : le navigateur ne peut pas réutiliser une ancienne copie en cache.
+ * Ex. asset('/assets/css/base.css') => "/assets/css/base.css?v=1793008764"
+ */
+function asset(string $path): string
+{
+    $file = APP_ROOT . '/public' . $path;
+
+    return is_file($file) ? $path . '?v=' . filemtime($file) : $path;
+}
+
+/**
+ * Logo adapté au thème : plus foncé sur fond clair pour rester lisible (contraste).
+ */
+function logo_url(): string
+{
+    return asset(\App\Core\Theme::isLight() ? '/assets/img/logo-light.png' : '/assets/img/logo.png');
+}
+
+/**
+ * Attribut aria-current="page" si $path est la page affichée, sinon rien.
+ * Sert à signaler le lien actif du menu (couleur en CSS, annonce par les lecteurs d'écran).
+ */
+function current_page_attr(string $path): string
+{
+    $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+
+    return $currentPath === $path ? ' aria-current="page"' : '';
+}
+
 function reject_invalid_utf8(mixed $value): void
 {
     if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {

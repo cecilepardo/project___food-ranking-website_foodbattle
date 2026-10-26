@@ -105,11 +105,11 @@ class Auth
 
     /**
      * Mémorise la page demandée par un visiteur, pour l'y renvoyer après sa connexion.
-     * Seul un chemin du site est accepté (voir isLocalPath()).
+     * Seul un chemin du site est accepté (voir Response::isLocalPath()).
      */
     public static function rememberIntendedUrl(string $url): void
     {
-        if (self::isLocalPath($url)) {
+        if (Response::isLocalPath($url)) {
             $_SESSION[self::INTENDED_KEY] = $url;
         }
     }
@@ -134,16 +134,5 @@ class Auth
         if (password_needs_rehash($hash, PASSWORD_DEFAULT, self::HASH_OPTIONS)) {
             User::updatePasswordHash($userId, self::hashPassword($password));
         }
-    }
-
-    /**
-     * Vrai pour un chemin du site ("/moderation?page=2"), faux pour tout ce qui mènerait ailleurs :
-     * les navigateurs lisent "//pirate.com" et "/\pirate.com" comme l'adresse d'un autre site.
-     */
-    private static function isLocalPath(string $url): bool
-    {
-        return str_starts_with($url, '/')
-            && !str_starts_with($url, '//')
-            && !str_starts_with($url, '/\\');
     }
 }

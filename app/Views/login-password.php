@@ -14,7 +14,7 @@
 </p>
 
 <?php if ($error): ?>
-    <p role="alert"><?= e($error) ?></p>
+    <p class="message message--error" role="alert"><?= e($error) ?></p>
 <?php endif; ?>
 
 <form class="form-panel" method="post" action="/connexion/mot-de-passe">

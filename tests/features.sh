@@ -232,7 +232,7 @@ req s GET '/?q=Smash'
 check "recherche « Smash » => toujours fonctionnelle" has 'Le Double Smash'
 req s GET "/?q=$(printf 'x%.0s' {1..200})"
 check "recherche de 200 caractères => coupée à 100" \
-    bash -c 'grep -q "value=\"$(printf "x%.0s" {1..100})\"" <<<"$1" && ! grep -q "x\{101\}" <<<"$1"' _ "$BODY"
+    bash -c 'grep -q "name=\"q\" value=\"$(printf "x%.0s" {1..100})\"" <<<"$1" && ! grep -q "name=\"q\" value=\"x\{101\}" <<<"$1"' _ "$BODY"
 sql "DELETE FROM users WHERE email LIKE 'fmt-$RUN-%@test.fr'" >/dev/null
 
 section "Moyennes : seuls les avis publiés comptent"
@@ -249,7 +249,7 @@ else
     exp=$(expected_average "$D")
     req x GET /
     check "accueil : plat $D affiché ★ $exp/5 (avis en attente ignorés)" \
-        bash -c 'grep -A12 "href=\"/plat/$1\"" <<<"$2" | grep -q "★ $3/5"' _ "$D" "$BODY" "$exp"
+        bash -c 'grep -A14 "href=\"/plat/$1\"" <<<"$2" | grep -q "$3/5 ·"' _ "$D" "$BODY" "$exp"
     req x GET /classement
     if grep -q "href=\"/plat/$D\"" <<<"$BODY"; then
         check "classement : plat $D affiché $exp (avis en attente ignorés)" \
