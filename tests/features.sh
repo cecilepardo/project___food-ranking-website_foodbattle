@@ -90,10 +90,14 @@ publish_test_reviews
 sql "DELETE FROM users WHERE email = 'fx-$RUN-d@test.fr'" >/dev/null
 req d GET /plat/6
 check "compte supprimé => son avis reste, signé « Compte désactivé »" has 'Compte désactivé · 2/5'
-top=$(sql "SELECT d.name FROM dishes d ORDER BY (SELECT COUNT(*) FROM votes WHERE dish_id=d.id) DESC, d.id LIMIT 1")
+top=$(sql "SELECT d.name FROM dishes d
+           ORDER BY (SELECT AVG(score) FROM ratings WHERE dish_id = d.id AND status = 'published') DESC NULLS LAST,
+                    (SELECT COUNT(*) FROM votes WHERE dish_id = d.id) DESC, d.id LIMIT 1")
 req x GET /classement
 first=$(grep -o '<a href="/plat/[0-9]*">[^<]*</a>' <<<"$BODY" | head -1 | sed 's/<[^>]*>//g')
-check "classement : le plat le plus voté est en tête ($top)" [ "$first" = "$(sed "s/'/\&#039;/g" <<<"$top")" ]
+check "classement : le plat le mieux noté est en tête ($top)" [ "$first" = "$(sed "s/'/\&#039;/g" <<<"$top")" ]
+notes=$(grep -A4 '<a href="/plat/' <<<"$BODY" | grep -oE '<td>([0-9],[0-9]|—)</td>' | sed 's/<[^>]*>//g; s/,/./; s/—/-1/')
+check "classement : notes affichées dans l'ordre décroissant" bash -c '[ "$1" = "$(sort -rn <<<"$1")" ]' _ "$notes"
 check "contrainte prix >= 0 en base" grep -q 'dishes_price_check' <<<"$(sql "UPDATE dishes SET price=-1 WHERE id=1")"
 check "contrainte catégorie en base" grep -q 'dishes_category_check' <<<"$(sql "UPDATE dishes SET category='kebab' WHERE id=1")"
 
@@ -302,12 +306,18 @@ else
             bash -c 'grep -A4 "href=\"/plat/$1\"" <<<"$2" | grep -q "<td>$3</td>"' _ "$D" "$BODY" "$exp"
     fi
 fi
-TOP=$(sql "SELECT d.id FROM dishes d ORDER BY (SELECT COUNT(*) FROM votes WHERE dish_id = d.id) DESC, d.id LIMIT 1")
-kept=$(sql "SELECT string_agg(id::text, ',') FROM ratings WHERE dish_id = $TOP AND status = 'published'")
+# Le classement montre 10 plats sur 12 et met les plats sans avis publié en dernier :
+# on retire les avis publiés des 3 plats les plus votés, le plus voté des trois arrive alors 10e.
+TOP3=$(sql "SELECT string_agg(id::text, ',') FROM (SELECT d.id FROM dishes d
+            ORDER BY (SELECT COUNT(*) FROM votes WHERE dish_id = d.id) DESC, d.id LIMIT 3) AS t")
+TOP=${TOP3%%,*}
+kept=$(sql "SELECT string_agg(id::text, ',') FROM ratings WHERE dish_id IN ($TOP3) AND status = 'published'")
 [ -n "$kept" ] && sql "UPDATE ratings SET status = 'pending' WHERE id IN ($kept)" >/dev/null
 req x GET /classement
 check "classement : plat sans avis publié => « — » au lieu de « 0,0 »" \
     bash -c 'grep -A4 "href=\"/plat/$1\"" <<<"$2" | grep -q "<td>—</td>"' _ "$TOP" "$BODY"
+check "classement : plat sans avis publié classé après les plats notés (10e)" \
+    bash -c '[ "$(grep -o "<a href=\"/plat/[0-9]*\"" <<<"$2" | sed -n 10p)" = "<a href=\"/plat/$1\"" ]' _ "$TOP" "$BODY"
 [ -n "$kept" ] && sql "UPDATE ratings SET status = 'published' WHERE id IN ($kept)" >/dev/null
 
 # Nettoyage : les comptes de test de ce script, avec leurs votes et leurs avis.
