@@ -39,7 +39,7 @@
             <th>Plat</th>
             <th>Établissement</th>
             <th>Prix</th>
-            <th>Actions</th>
+            <th class="table__cell--center">Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -49,11 +49,13 @@
                 <td><?= e($dish['restaurant']) ?></td>
                 <td><?= euro($dish['price']) ?></td>
                 <td>
-                    <a href="/dashboard/plats/<?= (int) $dish['id'] ?>/modifier">Modifier</a>
-                    <form class="inline-form" method="post" action="/dashboard/plats/<?= (int) $dish['id'] ?>/supprimer" data-delete>
-                        <?= csrf_field() ?>
-                        <button class="btn btn--danger">Supprimer</button>
-                    </form>
+                    <div class="table__actions">
+                        <a class="btn btn--secondary" href="/dashboard/plats/<?= (int) $dish['id'] ?>/modifier">Modifier</a>
+                        <form class="inline-form" method="post" action="/dashboard/plats/<?= (int) $dish['id'] ?>/supprimer" data-delete>
+                            <?= csrf_field() ?>
+                            <button class="btn btn--danger">Supprimer</button>
+                        </form>
+                    </div>
                 </td>
             </tr>
         <?php endforeach; ?>
@@ -62,7 +64,10 @@
 
 
 <details class="panel">
-    <summary>Ajouter un plat</summary>
+    <summary class="panel__summary">
+        Ajouter un plat
+        <span class="icon icon--chevron-down panel__chevron" aria-hidden="true"></span>
+    </summary>
 
     <form class="form-panel" method="post" action="/dashboard/plats">
         <?= csrf_field() ?>
@@ -74,20 +79,26 @@
 
         <label>
             Établissement
-            <select name="establishment_id">
-                <?php foreach ($establishments as $establishment): ?>
-                    <option value="<?= (int) $establishment['id'] ?>"><?= e($establishment['name']) ?></option>
-                <?php endforeach; ?>
-            </select>
+            <span class="select-field">
+                <select class="select-field__select" name="establishment_id">
+                    <?php foreach ($establishments as $establishment): ?>
+                        <option value="<?= (int) $establishment['id'] ?>"><?= e($establishment['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <span class="icon icon--chevron-down select-field__icon" aria-hidden="true"></span>
+            </span>
         </label>
 
         <label>
             Catégorie
-            <select name="category">
-                <option value="burger">Burger</option>
-                <option value="tacos">Tacos</option>
-                <option value="pizza">Pizza</option>
-            </select>
+            <span class="select-field">
+                <select class="select-field__select" name="category">
+                    <option value="burger">Burger</option>
+                    <option value="tacos">Tacos</option>
+                    <option value="pizza">Pizza</option>
+                </select>
+                <span class="icon icon--chevron-down select-field__icon" aria-hidden="true"></span>
+            </span>
         </label>
 
         <label>

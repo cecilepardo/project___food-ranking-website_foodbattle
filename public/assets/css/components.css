@@ -57,6 +57,12 @@
     mask-image: url("../img/eye-closed.svg");
 }
 
+.icon--chevron-down {
+    width: 16px;
+    height: 16px;
+    mask-image: url("../img/chevron-down.svg");
+}
+
 
 /* Bouton (en pilule)
    La bordure de 2px existe sur toutes les variantes (transparente par défaut)
@@ -91,8 +97,9 @@
     color: var(--color-highlight);
 }
 
+/* Survol : une touche de jaune, visible quel que soit le fond (carte, bandeau…) */
 .btn--secondary:hover {
-    background: var(--color-surface-raised);
+    background: color-mix(in srgb, var(--color-highlight) 12%, transparent);
 }
 
 /* Suppression (dashboard) */
@@ -144,7 +151,7 @@
 .search-field__icon {
     position: absolute;
     top: 50%;
-    left: 20px;
+    left: 14px;
     color: var(--color-text-muted);
     transform: translateY(-50%);
     pointer-events: none;   /* un clic sur la loupe atteint quand même le champ */
@@ -154,7 +161,7 @@
 .search-field__input {
     width: 100%;
     margin: 0;
-    padding-left: 48px;
+    padding-left: 42px;
 }
 
 
@@ -167,7 +174,7 @@
     position: relative;
     width: fit-content;
     max-width: 100%;
-    margin: var(--space-xs) 0 var(--space-sm);
+    margin: 0;
 }
 
 /* Le padding droit laisse la place au bouton */
@@ -186,9 +193,9 @@
 .password-field__toggle {
     position: absolute;
     top: 50%;
-    right: 6px;
-    width: 44px;
-    height: 44px;
+    right: 2px;
+    width: 40px;
+    height: 40px;
     padding: 0;
     border: 0;
     border-radius: var(--radius-pill);
@@ -206,6 +213,83 @@
 .password-field__toggle[aria-pressed="false"] .icon--eye-closed,
 .password-field__toggle[aria-pressed="true"] .icon--eye {
     display: none;
+}
+
+
+/* Liste déroulante avec notre propre flèche
+   La flèche du navigateur ne se règle pas : on la retire (appearance: none)
+   et on pose la nôtre par-dessus le bord droit, comme la loupe du champ de recherche.
+   -------------------------------------------------------------------------- */
+
+.select-field {
+    position: relative;
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin-top: var(--space-xs);
+}
+
+/* Le padding droit laisse la place à la flèche */
+.select-field__select {
+    margin: 0;
+    padding-right: 42px;
+    appearance: none;
+    cursor: pointer;
+}
+
+.select-field__icon {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    color: var(--color-text-muted);
+    transform: translateY(-50%);
+    pointer-events: none;   /* un clic sur la flèche ouvre quand même la liste */
+}
+
+/* Liste ouverte : flèche vers le haut.
+   Un navigateur qui ne connaît pas :open ignore la règle et garde la flèche vers le bas. */
+.select-field__select:open + .select-field__icon {
+    mask-image: url("../img/chevron-up.svg");
+}
+
+/* Menu ouvert aux couleurs du site : navigateurs qui le permettent (Chrome, Edge).
+   Les autres gardent le menu du système, qui suit le thème grâce à color-scheme. */
+@supports (appearance: base-select) {
+    .select-field__select,
+    .select-field__select::picker(select) {
+        appearance: base-select;
+    }
+
+    /* Notre flèche remplace celle de base-select */
+    .select-field__select::picker-icon {
+        display: none;
+    }
+
+    .select-field__select::picker(select) {
+        margin-top: var(--space-xs);
+        padding: var(--space-xs);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        background: var(--color-surface);
+        color: var(--color-text);
+        box-shadow: var(--shadow-raised);
+    }
+
+    .select-field__select option {
+        padding: var(--space-sm) 12px;
+        border-radius: 6px;
+    }
+
+    .select-field__select option:hover,
+    .select-field__select option:focus-visible {
+        background: var(--color-surface-raised);
+    }
+
+    /* Option choisie : en jaune, comme le lien de la page active */
+    .select-field__select option:checked {
+        color: var(--color-highlight);
+        font-weight: var(--font-weight-bold);
+    }
 }
 
 
@@ -328,12 +412,32 @@
 /* Encadrés : formulaire et bloc repliable (<details>)
    -------------------------------------------------------------------------- */
 
+/* Les éléments du formulaire sont empilés, espacés par le gap.
+   align-items: flex-start : chaque élément garde sa largeur (le bouton ne s'étire pas). */
 .form-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-md);
     max-width: 550px;
     padding: var(--space-lg);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     background: var(--color-surface);
+    box-shadow: var(--shadow-raised);
+}
+
+/* L'espace entre les champs vient du gap : on retire la marge des labels (base.css) */
+.form-panel label {
+    margin: 0;
+}
+
+/* Groupe label + champ + aide, quand le label ne peut pas entourer le champ
+   (champ mot de passe : un <label> ne peut pas contenir de bouton) */
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
 }
 
 .panel {
@@ -342,6 +446,36 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     background: var(--color-surface);
+    box-shadow: var(--shadow-raised);
+}
+
+/* Formulaire placé dans un encadré (dashboard) : l'encadré porte déjà l'ombre */
+.panel .form-panel {
+    box-shadow: none;
+}
+
+/* Titre du bloc repliable : texte à gauche, chevron à droite (remplace le triangle natif) */
+.panel__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    font-weight: var(--font-weight-extrabold);
+    list-style: none;
+}
+
+/* Le triangle natif de Safari ne disparaît qu'avec ce pseudo-élément */
+.panel__summary::-webkit-details-marker {
+    display: none;
+}
+
+.panel[open] .panel__summary {
+    margin-bottom: var(--space-md);
+}
+
+/* Bloc ouvert : chevron vers le haut */
+.panel[open] .panel__chevron {
+    mask-image: url("../img/chevron-up.svg");
 }
 
 
@@ -383,6 +517,19 @@
 .table th {
     background: var(--color-surface-raised);
     font-weight: var(--font-weight-extrabold);
+}
+
+/* Boutons d'action d'une ligne, espacés et passant à la ligne si la cellule est étroite */
+.table__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-sm);
+}
+
+/* Cellule centrée (en-tête de la colonne Actions, aligné sur ses boutons) */
+.table__cell--center {
+    text-align: center;
 }
 
 

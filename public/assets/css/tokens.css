@@ -45,8 +45,9 @@
     --space-2xl: 56px;
 
     /* Arrondis */
+    --radius-sm: 10px;               /* champs de formulaire */
     --radius-md: 16px;               /* cartes, bandeau */
-    --radius-pill: 999px;            /* boutons, tags, champs : bouts ronds */
+    --radius-pill: 999px;            /* boutons, tags : bouts ronds */
 
     /* Largeurs (le point de rupture mobile, 700px, est écrit dans chaque @media :
        une variable CSS ne peut pas être utilisée dans une media query) */

@@ -27,7 +27,7 @@ $statusLabels = [
             <th>Pseudo</th>
             <th>Avis</th>
             <th>Statut</th>
-            <th>Actions</th>
+            <th class="table__cell--center">Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -38,18 +38,20 @@ $statusLabels = [
                 <td><?= e($review['comment']) ?></td>
                 <td><?= e($statusLabels[$review['status']] ?? $review['status']) ?></td>
                 <td>
-                    <?php if ($review['status'] !== 'published'): ?>
-                        <form class="inline-form" method="post" action="/moderation/<?= (int) $review['id'] ?>/publier">
-                            <?= csrf_field() ?>
-                            <button class="btn">Publier</button>
-                        </form>
-                    <?php endif; ?>
-                    <?php if ($review['status'] !== 'rejected'): ?>
-                        <form class="inline-form" method="post" action="/moderation/<?= (int) $review['id'] ?>/refuser">
-                            <?= csrf_field() ?>
-                            <button class="btn btn--danger">Refuser</button>
-                        </form>
-                    <?php endif; ?>
+                    <div class="table__actions">
+                        <?php if ($review['status'] !== 'published'): ?>
+                            <form class="inline-form" method="post" action="/moderation/<?= (int) $review['id'] ?>/publier">
+                                <?= csrf_field() ?>
+                                <button class="btn">Publier</button>
+                            </form>
+                        <?php endif; ?>
+                        <?php if ($review['status'] !== 'rejected'): ?>
+                            <form class="inline-form" method="post" action="/moderation/<?= (int) $review['id'] ?>/refuser">
+                                <?= csrf_field() ?>
+                                <button class="btn btn--secondary">Refuser</button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
                 </td>
             </tr>
         <?php endforeach; ?>
