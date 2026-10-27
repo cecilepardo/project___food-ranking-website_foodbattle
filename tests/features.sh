@@ -430,6 +430,19 @@ req nav GET /dashboard/plats/1/modifier
 check "page Modifier un plat => menu admin présent, aucune pilule active" \
     bash -c 'grep -q "class=\"admin-nav\"" <<<"$1" && ! grep -q "admin-nav__link[^>]*aria-current" <<<"$1"' _ "$BODY"
 
+# Lien Dashboard du header : allumé sur toute l'administration
+dashboard_link() {  # valeur d'aria-current sur le lien Dashboard du header (vide si absent)
+    grep -o 'class="site-header__link" href="/dashboard"[^>]*' <<<"$BODY" | grep -o 'aria-current="[a-z]*"'
+}
+req nav GET /dashboard
+check "header : Dashboard en aria-current=\"page\" sur /dashboard" [ "$(dashboard_link)" = 'aria-current="page"' ]
+for path in /dashboard/etablissements /moderation /dashboard/plats/1/modifier; do
+    req nav GET "$path"
+    check "header : Dashboard en aria-current=\"true\" sur $path" [ "$(dashboard_link)" = 'aria-current="true"' ]
+done
+req nav GET /classement
+check "header : Dashboard sans aria-current hors administration" [ -z "$(dashboard_link)" ]
+
 # Nettoyage : les comptes de test de ce script, avec leurs votes et leurs avis.
 # (On supprime d'abord votes et avis : ON DELETE SET NULL les garderait sinon, signés « Compte désactivé ».)
 sql "DELETE FROM ratings WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'fx-$RUN-%@test.fr') OR comment = 'Avis du compte supprime'" >/dev/null

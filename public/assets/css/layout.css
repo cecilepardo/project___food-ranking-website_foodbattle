@@ -36,9 +36,9 @@
     text-decoration: none;
 }
 
-/* Page en cours (aria-current="page", ajouté par PHP) et survol : en jaune */
+/* Page ou rubrique en cours (aria-current, ajouté par PHP) et survol : en jaune */
 .site-header__link:hover,
-.site-header__link[aria-current="page"] {
+.site-header__link[aria-current] {
     color: var(--color-highlight);
 }
 
