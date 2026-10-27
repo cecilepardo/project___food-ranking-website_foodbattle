@@ -198,6 +198,41 @@ check "message « Le plat a été supprimé. » affiché" has 'Le plat a été s
 req a POST "/dashboard/plats/999999/supprimer" --data-urlencode "token=$t"
 check "plat inexistant => 404" [ "$CODE" = 404 ]
 
+section "Ajout d'un établissement (admin)"
+add_establishment() {  # add_establishment JAR NOM VILLE ADRESSE (déjà encodés pour l'URL)
+    req "$1" GET /dashboard/etablissements; local t; t=$(token)
+    req "$1" POST /dashboard/etablissements --data-urlencode "token=$t" \
+        --data "name=$2" --data "city=$3" --data "address=$4"
+}
+count_establishments() { sql "SELECT COUNT(*) FROM establishments WHERE name LIKE '%$RUN%'"; }
+req anon POST /dashboard/etablissements --data "name=Visiteur+$RUN&city=Lille&address=1+rue"
+check "visiteur POST /dashboard/etablissements => 302 vers /connexion" [ "$CODE" = 302 -a "$LOC" = /connexion ]
+add_establishment u "User+$RUN" Lille "1+rue"
+check "user POST /dashboard/etablissements => 403" [ "$CODE" = 403 ]
+req a POST /dashboard/etablissements --data "name=Sans+jeton+$RUN&city=Lille&address=1+rue"
+check "admin sans jeton CSRF => 403" [ "$CODE" = 403 ]
+check "… aucun établissement créé" [ "$(count_establishments)" = 0 ]
+req a GET /dashboard/etablissements
+check "formulaire « Ajouter un établissement » affiché" has 'action="/dashboard/etablissements"'
+add_establishment a "Chez+Ren%C3%A9+$RUN" "Villeneuve-d%E2%80%99Ascq" "2+all%C3%A9e+des+Tilleuls"
+check "admin ajoute => 302 vers /dashboard/etablissements?added=1" \
+    [ "$CODE" = 302 -a "$LOC" = "/dashboard/etablissements?added=1" ]
+check "établissement enregistré en base, accents compris" \
+    [ "$(sql "SELECT city || ' | ' || address FROM establishments WHERE name = 'Chez René $RUN'")" = "Villeneuve-d’Ascq | 2 allée des Tilleuls" ]
+req a GET "/dashboard/etablissements?added=1"
+check "message « L'établissement a été ajouté. » affiché" has 'établissement a été ajouté.'
+check "… listé dans la table des établissements" has "<td>Chez René $RUN</td>"
+req a GET /dashboard
+check "… et proposé dans « Ajouter un plat »" has ">Chez René $RUN</option>"
+add_establishment a "+++" Lille "1+rue"
+check "nom vide (espaces) => refusé" has "Vérifie les champs de l&#039;établissement."
+add_establishment a "Long+$RUN" "$(printf 'v%.0s' {1..81})" "1+rue"
+check "ville de 81 caractères => refusée" has "Vérifie les champs de l&#039;établissement."
+add_establishment a "Long+$RUN" Lille "$(printf 'a%.0s' {1..256})"
+check "adresse de 256 caractères => refusée" has "Vérifie les champs de l&#039;établissement."
+check "… aucun établissement invalide en base" [ "$(count_establishments)" = 1 ]
+sql "DELETE FROM establishments WHERE name LIKE '%$RUN%'" >/dev/null
+
 section "PR #7 — encodage UTF-8"
 req w GET '/?q=%FF'
 check "GET avec octet invalide (%FF) => 400" [ "$CODE" = 400 ]
