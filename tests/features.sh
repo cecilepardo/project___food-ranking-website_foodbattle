@@ -320,6 +320,44 @@ check "classement : plat sans avis publié classé après les plats notés (10e)
     bash -c '[ "$(grep -o "<a href=\"/plat/[0-9]*\"" <<<"$2" | sed -n 10p)" = "<a href=\"/plat/$1\"" ]' _ "$TOP" "$BODY"
 [ -n "$kept" ] && sql "UPDATE ratings SET status = 'published' WHERE id IN ($kept)" >/dev/null
 
+section "Id trop grand pour la base => 404 au lieu d'un plantage"
+# Les id sont des INTEGER PostgreSQL : au-delà de 2147483647, la requête SQL échouait (Fatal error).
+not_found() { [ "$CODE" = 404 ] && no_php_error; }
+for id in 2147483648 99999999999999999999; do
+    req big GET "/plat/$id"
+    check "visiteur GET /plat/$id => 404 sans erreur PHP" not_found
+done
+req big GET /plat/2147483647
+check "GET /plat/2147483647 (id max, inexistant) => 404 sans erreur PHP" not_found
+new_account big
+req big GET /plat/1; t=$(token)
+for path in /plat/2147483648/vote /plat/2147483648/avis; do
+    req big POST "$path" --data-urlencode "token=$t" --data-urlencode score=4 --data-urlencode comment=x
+    check "connecté POST $path => 404 sans erreur PHP" not_found
+done
+login adm admin@foodbattle.local foodbattle-admin
+req adm GET /dashboard/plats/2147483648/modifier
+check "admin GET /dashboard/plats/2147483648/modifier => 404 sans erreur PHP" not_found
+req adm GET /moderation; t=$(token)
+for path in /dashboard/plats/2147483648/supprimer /moderation/2147483648/publier /moderation/2147483648/refuser; do
+    req adm POST "$path" --data-urlencode "token=$t"
+    check "admin POST $path => 404 sans erreur PHP" not_found
+done
+
+section "En-têtes de sécurité (clickjacking, type de contenu)"
+security_headers() {
+    grep -qi '^x-frame-options: DENY' "$DIR/headers" && grep -qi '^x-content-type-options: nosniff' "$DIR/headers"
+}
+for path in / /plat/1 /classement /page-inexistante; do
+    req hdr GET "$path"
+    check "GET $path => X-Frame-Options: DENY et X-Content-Type-Options: nosniff" security_headers
+done
+login hdr admin@foodbattle.local foodbattle-admin
+for path in /dashboard /moderation /dashboard/plats/1/modifier; do
+    req hdr GET "$path"
+    check "admin GET $path => X-Frame-Options: DENY et X-Content-Type-Options: nosniff" security_headers
+done
+
 # Nettoyage : les comptes de test de ce script, avec leurs votes et leurs avis.
 # (On supprime d'abord votes et avis : ON DELETE SET NULL les garderait sinon, signés « Compte désactivé ».)
 sql "DELETE FROM ratings WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'fx-$RUN-%@test.fr') OR comment = 'Avis du compte supprime'" >/dev/null

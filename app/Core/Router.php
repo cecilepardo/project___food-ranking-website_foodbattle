@@ -12,6 +12,9 @@ use LogicException;
  */
 class Router
 {
+    /** Plus grand id possible : les colonnes id sont des INTEGER PostgreSQL (2^31 - 1). */
+    private const MAX_ID = 2147483647;
+
     /** @var array<int, array{method: string, pattern: string, action: array, middlewares: array<string>}> */
     private array $routes = [];
 
@@ -63,6 +66,9 @@ class Router
 
             [$controllerClass, $methodName] = $route['action'];
             $params = $this->extractParams($matches);
+            if ($params === null) {
+                break; // id trop grand : aucun plat ni avis ne peut l'avoir
+            }
 
             // Les middlewares passent avant la création du controller : s'ils bloquent, aucun code du controller ne s'exécute.
             $this->runMiddlewares($route['middlewares']);
@@ -107,14 +113,21 @@ class Router
 
     /**
      * Garde uniquement les paramètres nommés ({id}) et les convertit en entiers.
+     * Renvoie null si un id dépasse MAX_ID : PostgreSQL planterait sur la requête.
      */
-    private function extractParams(array $matches): array
+    private function extractParams(array $matches): ?array
     {
         $params = [];
         foreach ($matches as $key => $value) {
-            if (is_string($key)) {
-                $params[] = (int) $value;
+            if (!is_string($key)) {
+                continue;
             }
+            // (int) sature à PHP_INT_MAX pour les nombres géants, donc la comparaison reste juste.
+            $id = (int) $value;
+            if ($id > self::MAX_ID) {
+                return null;
+            }
+            $params[] = $id;
         }
         return $params;
     }
