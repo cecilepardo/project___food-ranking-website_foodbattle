@@ -310,6 +310,30 @@ check "classement : plat sans avis publié => « — » au lieu de « 0,0 »" \
     bash -c 'grep -A4 "href=\"/plat/$1\"" <<<"$2" | grep -q "<td>—</td>"' _ "$TOP" "$BODY"
 [ -n "$kept" ] && sql "UPDATE ratings SET status = 'published' WHERE id IN ($kept)" >/dev/null
 
+section "Id trop grand pour la base => 404 au lieu d'un plantage"
+# Les id sont des INTEGER PostgreSQL : au-delà de 2147483647, la requête SQL échouait (Fatal error).
+not_found() { [ "$CODE" = 404 ] && no_php_error; }
+for id in 2147483648 99999999999999999999; do
+    req big GET "/plat/$id"
+    check "visiteur GET /plat/$id => 404 sans erreur PHP" not_found
+done
+req big GET /plat/2147483647
+check "GET /plat/2147483647 (id max, inexistant) => 404 sans erreur PHP" not_found
+new_account big
+req big GET /plat/1; t=$(token)
+for path in /plat/2147483648/vote /plat/2147483648/avis; do
+    req big POST "$path" --data-urlencode "token=$t" --data-urlencode score=4 --data-urlencode comment=x
+    check "connecté POST $path => 404 sans erreur PHP" not_found
+done
+login adm admin@foodbattle.local foodbattle-admin
+req adm GET /dashboard/plats/2147483648/modifier
+check "admin GET /dashboard/plats/2147483648/modifier => 404 sans erreur PHP" not_found
+req adm GET /moderation; t=$(token)
+for path in /dashboard/plats/2147483648/supprimer /moderation/2147483648/publier /moderation/2147483648/refuser; do
+    req adm POST "$path" --data-urlencode "token=$t"
+    check "admin POST $path => 404 sans erreur PHP" not_found
+done
+
 # Nettoyage : les comptes de test de ce script, avec leurs votes et leurs avis.
 # (On supprime d'abord votes et avis : ON DELETE SET NULL les garderait sinon, signés « Compte désactivé ».)
 sql "DELETE FROM ratings WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'fx-$RUN-%@test.fr') OR comment = 'Avis du compte supprime'" >/dev/null
