@@ -320,6 +320,15 @@ check "classement : plat sans avis publié classé après les plats notés (10e)
     bash -c '[ "$(grep -o "<a href=\"/plat/[0-9]*\"" <<<"$2" | sed -n 10p)" = "<a href=\"/plat/$1\"" ]' _ "$TOP" "$BODY"
 [ -n "$kept" ] && sql "UPDATE ratings SET status = 'published' WHERE id IN ($kept)" >/dev/null
 
+section "Versions d'Apache et de PHP masquées (Dockerfile)"
+hides_versions() {
+    grep -qi '^server: Apache\s*$' "$DIR/headers" && ! grep -qi '^x-powered-by' "$DIR/headers"
+}
+for path in / /page-inexistante /assets/inexistant.css; do
+    req ver GET "$path"
+    check "GET $path => « Server: Apache » sans version, pas de X-Powered-By" hides_versions
+done
+
 section "Id trop grand pour la base => 404 au lieu d'un plantage"
 # Les id sont des INTEGER PostgreSQL : au-delà de 2147483647, la requête SQL échouait (Fatal error).
 not_found() { [ "$CODE" = 404 ] && no_php_error; }
