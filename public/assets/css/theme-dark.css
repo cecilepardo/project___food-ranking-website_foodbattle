@@ -43,4 +43,15 @@
        plutôt que d'inventer un vert. Comme il s'appuie sur d'autres variables,
        il s'adapte tout seul au thème clair : pas besoin de le redéfinir. */
     --color-success-bg: color-mix(in srgb, var(--color-highlight) 15%, var(--color-surface));
+
+    /* Papier peint : 6 % d'orange dans le fond, ton sur ton.
+       Calculé à partir des autres variables : s'adapte tout seul au thème clair. */
+    --color-wallpaper: color-mix(in srgb, var(--color-brand) 6%, var(--color-bg));
+
+    /* Bandeau d'accueil (hero) : lueur orange à gauche */
+    --color-hero-glow: color-mix(in srgb, var(--color-brand) 28%, transparent);
+
+    /* Ombre des blocs en relief (bandeau d'accueil).
+       Presque invisible sur fond sombre : c'est voulu, la lueur suffit. */
+    --shadow-raised: 0 12px 40px rgb(0 0 0 / 0.45);
 }

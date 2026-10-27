@@ -17,6 +17,20 @@ body {
     background: var(--color-bg);
 }
 
+/* Papier peint de piments : un calque fixe derrière tout le contenu,
+   rempli de --color-wallpaper et découpé par le motif (même technique que les icônes).
+   Fixe : le motif ne défile pas avec la page, ce qui le rend plus discret. */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--color-wallpaper);
+    mask-image: url("../img/chili-pattern.svg");
+    mask-size: 171px;   /* tuile de 480 → piment de 40px à l'écran */
+    pointer-events: none;
+}
+
 img {
     max-width: 100%;
 }
@@ -84,16 +98,18 @@ label {
     font-weight: var(--font-weight-bold);
 }
 
-/* Champs en pilule, comme le champ de recherche de la maquette */
+/* Champs : rectangles aux coins arrondis (la pilule est réservée aux boutons).
+   9px de padding vertical + une ligne de 24px + 2px de bordure = 44px,
+   la même hauteur que les boutons : ils s'alignent sur une même ligne. */
 input,
 select,
 textarea {
     display: block;
     max-width: 100%;
     margin-top: var(--space-xs);
-    padding: 14px 20px;
+    padding: 9px 14px;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-sm);
     background: var(--color-surface);
     color: var(--color-text);
     font: inherit;
@@ -105,11 +121,10 @@ textarea {
     color: var(--color-text-muted);
 }
 
-/* Une zone de texte sur plusieurs lignes : une pilule serait déformée */
+/* Une zone de texte sur plusieurs lignes */
 textarea {
     width: 440px;
     height: 95px;
-    border-radius: var(--radius-md);
 }
 
 summary {

@@ -45,14 +45,17 @@ $count = count($dishes);
 
     <label class="filters__field">
         <span class="visually-hidden">Catégorie</span>
-        <select class="filters__select" name="categorie">
-            <option value="">Tout</option>
-            <?php foreach ($categories as $value => $label): ?>
-                <option value="<?= e($value) ?>" <?= $category === $value ? 'selected' : '' ?>>
-                    <?= e($label) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
+        <span class="select-field filters__select">
+            <select class="select-field__select" name="categorie">
+                <option value="">Tout</option>
+                <?php foreach ($categories as $value => $label): ?>
+                    <option value="<?= e($value) ?>" <?= $category === $value ? 'selected' : '' ?>>
+                        <?= e($label) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <span class="icon icon--chevron-down select-field__icon" aria-hidden="true"></span>
+        </span>
     </label>
 
     <button class="btn">Rechercher</button>

@@ -27,4 +27,16 @@
 
     /* Erreurs */
     --color-danger: #c62828;
+
+    /* Bandeau d'accueil (hero) : l'orange vif du thème sombre (#ff7b30).
+       --color-brand (#c24e14) donnerait une lueur terne sur le fond blanc.
+       30 % au maximum : au-delà, le surtitre (--color-highlight) passe sous 4,5:1. */
+    --color-hero-glow: color-mix(in srgb, #ff7b30 30%, transparent);
+
+    /* Ombre teintée d'orange : détache le bandeau blanc du fond de page */
+    --shadow-raised: 0 12px 40px color-mix(in srgb, #c24e14 18%, transparent);
+
+    /* Papier peint : 10 % (au lieu de 6 %) pour la même présence qu'en sombre,
+       un fond clair rendant les faibles écarts moins visibles */
+    --color-wallpaper: color-mix(in srgb, var(--color-brand) 10%, var(--color-bg));
 }
