@@ -47,10 +47,10 @@ use App\Core\View;
                 <td><?= euro($dish['price']) ?></td>
                 <td>
                     <div class="table__actions">
-                        <a class="btn btn--secondary" href="/dashboard/plats/<?= (int) $dish['id'] ?>/modifier">Modifier</a>
+                        <a class="btn btn--small btn--secondary" href="/dashboard/plats/<?= (int) $dish['id'] ?>/modifier">Modifier</a>
                         <form class="inline-form" method="post" action="/dashboard/plats/<?= (int) $dish['id'] ?>/supprimer" data-delete>
                             <?= csrf_field() ?>
-                            <button class="btn btn--danger">Supprimer</button>
+                            <button class="btn btn--small btn--danger">Supprimer</button>
                         </form>
                     </div>
                 </td>

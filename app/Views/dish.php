@@ -53,7 +53,7 @@ $dishId = (int) $dish['id'];
 <?php endif; ?>
 
 <?php if ($ratingSent): ?>
-    <p class="message" role="status">Merci, ton avis sera publié après validation par un modérateur.</p>
+    <p class="message" role="status">Merci ! Ton avis est en attente de modération, il sera publié après validation.</p>
 <?php endif; ?>
 
 <h2>Donner mon avis</h2>
