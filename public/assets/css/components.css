@@ -117,6 +117,16 @@
     width: 100%;
 }
 
+/* Petit bouton : actions répétées dans un tableau (dashboard, modération).
+   8px + 13px + 8px + 2 × 2px de bordure = 33px de haut, contre 44px pour un bouton normal :
+   au-dessus du minimum de 24px pour une cible cliquable (WCAG 2.5.8).
+   Graisse réduite (bold au lieu de black) : à 13px, le black empâte les lettres. */
+.btn--small {
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-bold);
+}
+
 /* Formulaire réduit à un bouton (ex. Supprimer), affiché sur la même ligne que le lien voisin. */
 .inline-form {
     display: inline;

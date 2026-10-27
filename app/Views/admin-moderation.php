@@ -22,7 +22,7 @@ $statusLabels = [
 <?php if ($done === 'published'): ?>
     <p class="message" role="status">L'avis a été publié.</p>
 <?php elseif ($done === 'rejected'): ?>
-    <p class="message" role="status">L'avis a été refusé.</p>
+    <p class="message" role="status">L'avis ne sera pas affiché sur le site.</p>
 <?php endif; ?>
 
 <table class="table">
@@ -37,6 +37,10 @@ $statusLabels = [
     </thead>
     <tbody>
         <?php foreach ($reviews as $review): ?>
+            <?php
+            // Un avis déjà publié est « dépublié » ; un avis en attente est « refusé » (même action)
+            $rejectLabel = $review['status'] === 'published' ? 'Dépublier' : 'Refuser';
+            ?>
             <tr>
                 <td><?= e($review['dish']) ?></td>
                 <td><?= e($review['nickname'] ?? 'Compte désactivé') ?></td>
@@ -47,13 +51,13 @@ $statusLabels = [
                         <?php if ($review['status'] !== 'published'): ?>
                             <form class="inline-form" method="post" action="/moderation/<?= (int) $review['id'] ?>/publier">
                                 <?= csrf_field() ?>
-                                <button class="btn">Publier</button>
+                                <button class="btn btn--small">Publier</button>
                             </form>
                         <?php endif; ?>
                         <?php if ($review['status'] !== 'rejected'): ?>
                             <form class="inline-form" method="post" action="/moderation/<?= (int) $review['id'] ?>/refuser">
                                 <?= csrf_field() ?>
-                                <button class="btn btn--secondary">Refuser</button>
+                                <button class="btn btn--small btn--secondary"><?= e($rejectLabel) ?></button>
                             </form>
                         <?php endif; ?>
                     </div>

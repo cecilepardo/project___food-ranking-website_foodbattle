@@ -106,7 +106,7 @@ new_account m
 rate m 7 4 "Avis a moderer $RUN"
 check "nouvel avis => 302 vers /plat/7?avis=1" [ "$CODE" = 302 -a "$LOC" = "/plat/7?avis=1" ]
 req m GET "/plat/7?avis=1"
-check "message « publié après validation » affiché" has 'ton avis sera publié après validation'
+check "message « en attente de modération » affiché" has 'Ton avis est en attente de modération'
 check "… mais l'avis n'est pas encore visible" hasnt "Avis a moderer $RUN"
 RID=$(sql "SELECT id FROM ratings WHERE comment = 'Avis a moderer $RUN'")
 check "avis enregistré en attente (pending)" [ "$(sql "SELECT status FROM ratings WHERE id=$RID")" = pending ]
@@ -114,6 +114,8 @@ login a admin@foodbattle.local foodbattle-admin
 req a GET /moderation
 check "page de modération : bouton Publier pour l'avis" has "action=\"/moderation/$RID/publier\""
 check "page de modération : bouton Refuser pour l'avis" has "action=\"/moderation/$RID/refuser\""
+check "… libellé « Refuser » tant que l'avis est en attente" \
+    bash -c "grep -A3 'action=\"/moderation/$RID/refuser\"' <<<\"\$0\" | grep -q '>Refuser<'" "$BODY"
 check "avis en attente listé en premier" [ "$(grep -o 'action="/moderation/[0-9]*/' <<<"$BODY" | head -1)" = "action=\"/moderation/$RID/" ]
 t=$(token)
 req a POST "/moderation/$RID/publier"
@@ -127,6 +129,8 @@ req a GET "/moderation?fait=published"
 check "message « L'avis a été publié. »" has "L&#039;avis a été publié.\|L'avis a été publié."
 check "avis publié : plus de bouton Publier, bouton Refuser toujours là" \
     bash -c "! grep -q 'action=\"/moderation/$RID/publier\"' <<<\"\$0\" && grep -q 'action=\"/moderation/$RID/refuser\"' <<<\"\$0\"" "$BODY"
+check "… et ce bouton s'appelle « Dépublier »" \
+    bash -c "grep -A3 'action=\"/moderation/$RID/refuser\"' <<<\"\$0\" | grep -q '>Dépublier<'" "$BODY"
 t=$(token)
 req a POST "/moderation/$RID/refuser" --data-urlencode "token=$t"
 check "admin refuse => 302 vers /moderation?fait=rejected" [ "$CODE" = 302 -a "$LOC" = "/moderation?fait=rejected" ]
