@@ -6,8 +6,10 @@
  * @var string|null $error
  * @var bool        $saved
  */
+
+use App\Core\View;
 ?>
-<p><a href="/dashboard">← Dashboard</a></p>
+<?= View::partial('admin-nav') ?>
 
 <h1>Modifier un plat</h1>
 

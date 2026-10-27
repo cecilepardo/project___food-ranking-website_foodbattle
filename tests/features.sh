@@ -367,6 +367,30 @@ for path in /dashboard /moderation /dashboard/plats/1/modifier; do
     check "admin GET $path => X-Frame-Options: DENY et X-Content-Type-Options: nosniff" security_headers
 done
 
+section "Menu de l'administration (pages Plats, Établissements, Modération)"
+req navv GET /dashboard/etablissements
+check "visiteur GET /dashboard/etablissements => 302 vers /connexion" [ "$CODE" = 302 -a "$LOC" = /connexion ]
+login navu user@foodbattle.local foodbattle-user
+req navu GET /dashboard/etablissements
+check "user GET /dashboard/etablissements => 403" [ "$CODE" = 403 ]
+
+login nav admin@foodbattle.local foodbattle-admin
+EST=$(sql "SELECT name FROM establishments ORDER BY id LIMIT 1")
+req nav GET /dashboard/etablissements
+check "admin GET /dashboard/etablissements => 200, « $EST » listé" bash -c '[ "$1" = 200 ] && grep -q "<td>$2</td>" <<<"$3"' _ "$CODE" "$EST" "$BODY"
+
+# Une seule pilule active, celle de la page affichée (les liens sont sur une ligne chacun dans le partial)
+active_link() {  # active_link CHEMIN
+    [ "$(grep -o 'class="admin-nav__link" href="[^"]*" aria-current="page"' <<<"$BODY")" = "class=\"admin-nav__link\" href=\"$1\" aria-current=\"page\"" ]
+}
+for path in /dashboard /dashboard/etablissements /moderation; do
+    req nav GET "$path"
+    check "admin GET $path => menu admin, seule la pilule $path est active" active_link "$path"
+done
+req nav GET /dashboard/plats/1/modifier
+check "page Modifier un plat => menu admin présent, aucune pilule active" \
+    bash -c 'grep -q "class=\"admin-nav\"" <<<"$1" && ! grep -q "admin-nav__link[^>]*aria-current" <<<"$1"' _ "$BODY"
+
 # Nettoyage : les comptes de test de ce script, avec leurs votes et leurs avis.
 # (On supprime d'abord votes et avis : ON DELETE SET NULL les garderait sinon, signés « Compte désactivé ».)
 sql "DELETE FROM ratings WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'fx-$RUN-%@test.fr') OR comment = 'Avis du compte supprime'" >/dev/null

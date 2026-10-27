@@ -90,8 +90,9 @@
 
 /* Marges haut/bas reprises de la maquette (48px / 64px) */
 .page {
+    flex: 1;             /* prend la place libre : le footer reste en bas de l'écran */
+    width: 100%;
     max-width: var(--page-max-width);
-    min-height: 65vh;
     margin: 0 auto;
     padding: 48px var(--space-lg) 64px;
 }
