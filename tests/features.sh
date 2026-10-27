@@ -344,6 +344,20 @@ for path in /dashboard/plats/2147483648/supprimer /moderation/2147483648/publier
     check "admin POST $path => 404 sans erreur PHP" not_found
 done
 
+section "En-têtes de sécurité (clickjacking, type de contenu)"
+security_headers() {
+    grep -qi '^x-frame-options: DENY' "$DIR/headers" && grep -qi '^x-content-type-options: nosniff' "$DIR/headers"
+}
+for path in / /plat/1 /classement /page-inexistante; do
+    req hdr GET "$path"
+    check "GET $path => X-Frame-Options: DENY et X-Content-Type-Options: nosniff" security_headers
+done
+login hdr admin@foodbattle.local foodbattle-admin
+for path in /dashboard /moderation /dashboard/plats/1/modifier; do
+    req hdr GET "$path"
+    check "admin GET $path => X-Frame-Options: DENY et X-Content-Type-Options: nosniff" security_headers
+done
+
 # Nettoyage : les comptes de test de ce script, avec leurs votes et leurs avis.
 # (On supprime d'abord votes et avis : ON DELETE SET NULL les garderait sinon, signés « Compte désactivé ».)
 sql "DELETE FROM ratings WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'fx-$RUN-%@test.fr') OR comment = 'Avis du compte supprime'" >/dev/null

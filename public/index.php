@@ -34,6 +34,11 @@ $config = require APP_ROOT . '/config/config.php';
 // Elle reste visible dans les logs : docker compose logs app
 ini_set('display_errors', $config['env'] === 'dev' ? '1' : '0');
 
+// Interdit d'afficher le site dans une <iframe> d'un autre site (clickjacking sur les boutons admin),
+// et empêche le navigateur de deviner un autre type de contenu que celui annoncé.
+header('X-Frame-Options: DENY');
+header('X-Content-Type-Options: nosniff');
+
 array_walk_recursive($_GET, 'reject_invalid_utf8');
 array_walk_recursive($_POST, 'reject_invalid_utf8');
 
