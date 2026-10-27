@@ -42,25 +42,6 @@
     color: var(--color-highlight);
 }
 
-.site-header__user {
-    font-weight: var(--font-weight-extrabold);
-}
-
-/* La déconnexion est un formulaire POST (voir AuthController::logout) : on l'affiche comme un lien. */
-.site-header__logout {
-    display: inline;
-}
-
-.site-header__logout-button {
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--color-text-muted);
-    font: inherit;
-    text-decoration: underline;
-    cursor: pointer;
-}
-
 
 /* Bouton de changement de thème (formulaire POST /theme)
    -------------------------------------------------------------------------- */

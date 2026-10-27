@@ -21,10 +21,6 @@ $themeIcon  = Theme::isLight() ? 'icon--moon' : 'icon--sun';
         <a class="site-header__link" href="/"<?= current_page_attr('/') ?>>Découvrir</a>
         <a class="site-header__link" href="/classement"<?= current_page_attr('/classement') ?>>Classement</a>
 
-        <?php if (Auth::isAdmin()): ?>
-            <a class="site-header__link" href="/dashboard"<?= current_page_attr('/dashboard') ?>>Dashboard</a>
-        <?php endif; ?>
-
         <form method="post" action="/theme">
             <?= csrf_field() ?>
             <!-- Page actuelle (avec sa recherche éventuelle) : on y revient après le changement -->
@@ -38,10 +34,14 @@ $themeIcon  = Theme::isLight() ? 'icon--moon' : 'icon--sun';
         <?php if ($user === null): ?>
             <a class="btn btn--secondary" href="/connexion">Connexion</a>
         <?php else: ?>
-            <span class="site-header__user"><?= e($user['nickname']) ?></span>
-            <form class="site-header__logout" method="post" action="/deconnexion">
+            <?php if (Auth::isAdmin()): ?>
+                <a class="site-header__link" href="/dashboard"<?= current_page_attr('/dashboard') ?>>Dashboard</a>
+            <?php endif; ?>
+
+            <?php /* Déconnexion en POST (voir AuthController::logout), à la place du bouton Connexion */ ?>
+            <form class="inline-form" method="post" action="/deconnexion">
                 <?= csrf_field() ?>
-                <button class="site-header__logout-button">Déconnexion</button>
+                <button class="btn btn--secondary">Déconnexion</button>
             </form>
         <?php endif; ?>
     </nav>
