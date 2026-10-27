@@ -5,12 +5,17 @@
  * @var array       $reviews
  * @var string|null $done     'published' ou 'rejected' après une action
  */
+
+use App\Core\View;
+
 $statusLabels = [
     'pending'   => 'En attente',
     'published' => 'Publié',
     'rejected'  => 'Refusé',
 ];
 ?>
+<?= View::partial('admin-nav') ?>
+
 <h1>Modération des avis</h1>
 <p>Un avis n'apparaît sur la fiche du plat qu'une fois publié.</p>
 
@@ -57,5 +62,3 @@ $statusLabels = [
         <?php endforeach; ?>
     </tbody>
 </table>
-
-<p><a href="/dashboard">Retour au dashboard</a></p>

@@ -1,22 +1,21 @@
 <?php
 /**
- * Dashboard : plats, ajout d'un plat, établissements.
+ * Administration, page Plats : liste des plats et ajout d'un plat.
  *
  * @var array       $dishes
- * @var array       $establishments
+ * @var array       $establishments  Pour le menu déroulant du formulaire d'ajout
  * @var array       $categories
- * @var string|null $error  Message si le formulaire d'ajout est invalide
- * @var bool        $added  true après l'ajout d'un plat
+ * @var string|null $error    Message si le formulaire d'ajout est invalide
+ * @var bool        $added    true après l'ajout d'un plat
+ * @var bool        $deleted  true après la suppression d'un plat
  */
-?>
-<h1>Dashboard</h1>
-<p>Espace de gestion du prototype local FoodBattle.</p>
 
-<nav class="subnav">
-    <a href="#plats">Plats</a> ·
-    <a href="#etablissements">Établissements</a> ·
-    <a href="/moderation">Modération</a>
-</nav>
+use App\Core\View;
+?>
+<?= View::partial('admin-nav') ?>
+
+<h1>Plats (<?= count($dishes) ?>)</h1>
+<p>Espace de gestion du prototype local FoodBattle.</p>
 
 <?php if ($error): ?>
     <p class="message message--error" role="alert"><?= e($error) ?></p>
@@ -30,8 +29,6 @@
     <p class="message">Le plat a été supprimé.</p>
 <?php endif; ?>
 
-
-<h2 id="plats">Les plats (<?= count($dishes) ?>)</h2>
 
 <table class="table">
     <thead>
@@ -114,25 +111,3 @@
         <button class="btn">Ajouter</button>
     </form>
 </details>
-
-
-<h2 id="etablissements">Les établissements</h2>
-
-<table class="table">
-    <thead>
-        <tr>
-            <th>Nom</th>
-            <th>Ville</th>
-            <th>Adresse</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php foreach ($establishments as $establishment): ?>
-            <tr>
-                <td><?= e($establishment['name']) ?></td>
-                <td><?= e($establishment['city']) ?></td>
-                <td><?= e($establishment['address']) ?></td>
-            </tr>
-        <?php endforeach; ?>
-    </tbody>
-</table>

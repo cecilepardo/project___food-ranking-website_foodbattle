@@ -8,6 +8,7 @@
 
 use App\Controllers\Admin\DashboardController;
 use App\Controllers\Admin\DishController as AdminDishController;
+use App\Controllers\Admin\EstablishmentController;
 use App\Controllers\Admin\ModerationController;
 use App\Controllers\AuthController;
 use App\Controllers\DishController;
@@ -58,6 +59,7 @@ return function (Router $router): void {
     // Toute nouvelle page d'administration doit être déclarée DANS ce groupe.
     $router->group([RequireAdmin::class], function (Router $router): void {
         $router->get('/dashboard',                        [DashboardController::class, 'index']);  // ancien dashboard.php
+        $router->get('/dashboard/etablissements',         [EstablishmentController::class, 'index']);
         $router->post('/dashboard/plats',                 [DashboardController::class, 'store']);
         $router->get('/dashboard/plats/{id}/modifier',    [AdminDishController::class, 'edit']);   // ancien modifier.php
         $router->post('/dashboard/plats/{id}/modifier',   [AdminDishController::class, 'update']);
