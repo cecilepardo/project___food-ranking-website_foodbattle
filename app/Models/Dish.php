@@ -90,7 +90,8 @@ class Dish
     }
 
     /**
-     * Les 10 plats du classement.
+     * Les 10 plats du classement : meilleure note moyenne d'abord, puis le plus voté en cas d'égalité.
+     * Les plats sans avis publié (moyenne NULL) passent en dernier.
      */
     public static function ranking(int $limit = 10): array
     {
@@ -103,7 +104,7 @@ class Dish
                     (SELECT AVG(score) FROM ratings WHERE dish_id = d.id AND status = \'published\') AS average
              FROM dishes d
              JOIN establishments e ON e.id = d.establishment_id
-             ORDER BY votes DESC, d.id
+             ORDER BY average DESC NULLS LAST, votes DESC, d.id
              LIMIT ?'
         );
         $statement->execute([$limit]);

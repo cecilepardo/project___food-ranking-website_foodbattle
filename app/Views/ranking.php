@@ -6,7 +6,7 @@
  */
 ?>
 <h1>Le top street food</h1>
-<p>Les 10 plats qui ont reçu le plus de votes. À toi de faire bouger le classement !</p>
+<p>Les 10 plats les mieux notés. À note égale, le plus voté passe devant. À toi de faire bouger le classement !</p>
 
 <table class="table">
     <thead>
