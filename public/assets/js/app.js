@@ -68,6 +68,41 @@ function setupArrowSteps() {
     });
 }
 
+/**
+ * Bouton œil des champs mot de passe (data-password-toggle) : affiche ou masque la saisie.
+ * Le bouton retrouve son champ grâce à aria-controls.
+ * Sans JavaScript, il reste caché (hidden) et le champ fonctionne normalement.
+ */
+function setupPasswordToggles() {
+    document.querySelectorAll('button[data-password-toggle]').forEach(function (button) {
+        var input = document.getElementById(button.getAttribute('aria-controls'));
+
+        if (!input) {
+            return;
+        }
+
+        // aria-pressed suit l'état du champ : le CSS s'en sert pour choisir l'icône
+        function setVisible(isVisible) {
+            input.type = isVisible ? 'text' : 'password';
+            button.setAttribute('aria-pressed', String(isVisible));
+        }
+
+        button.addEventListener('click', function () {
+            setVisible(input.type === 'password');
+        });
+
+        // Remasque avant l'envoi : le navigateur ne doit pas mémoriser le mot de passe comme un texte ordinaire
+        if (input.form) {
+            input.form.addEventListener('submit', function () {
+                setVisible(false);
+            });
+        }
+
+        button.hidden = false;
+    });
+}
+
 setupImageFallbacks();
 setupDeleteButtons();
 setupArrowSteps();
+setupPasswordToggles();
