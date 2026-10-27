@@ -41,7 +41,7 @@ password u user@foodbattle.local foodbattle-user
 check "bon mot de passe => 302 vers /" [ "$CODE" = 302 -a "$LOC" = / ]
 check "identifiant de session régénéré" [ "$(sid u)" != "$before" ]
 req u GET /
-check "header : pseudo Testeur, pas de Dashboard" bash -c "grep -q Testeur <<<\"\$0\" && ! grep -q 'href=\"/dashboard\"' <<<\"\$0\"" "$BODY"
+check "header : bouton Déconnexion, pas de Dashboard" bash -c "grep -q 'action=\"/deconnexion\"' <<<\"\$0\" && ! grep -q 'href=\"/dashboard\"' <<<\"\$0\"" "$BODY"
 req u GET /dashboard
 check "user GET /dashboard => 403" [ "$CODE" = 403 ]
 
@@ -83,7 +83,7 @@ register r "$NEW" "$NICK" motdepasse
 check "inscription valide => 302 vers /" [ "$CODE" = 302 -a "$LOC" = / ]
 check "compte créé : rôle user, hash \$2y\$12\$" [ "$(sql "SELECT role || ' ' || left(password_hash,7) FROM users WHERE email='$NEW'")" = 'user $2y$12$' ]
 req r GET /
-check "pseudo du compte affiché dans le header" has "$NICK"
+check "inscription => connecté directement (bouton Déconnexion dans le header)" has 'action="/deconnexion"'
 req r GET /dashboard
 check "nouvel inscrit GET /dashboard => 403" [ "$CODE" = 403 ]
 
