@@ -60,6 +60,7 @@ return function (Router $router): void {
     $router->group([RequireAdmin::class], function (Router $router): void {
         $router->get('/dashboard',                        [DashboardController::class, 'index']);  // ancien dashboard.php
         $router->get('/dashboard/etablissements',         [EstablishmentController::class, 'index']);
+        $router->post('/dashboard/etablissements',        [EstablishmentController::class, 'store']);
         $router->post('/dashboard/plats',                 [DashboardController::class, 'store']);
         $router->get('/dashboard/plats/{id}/modifier',    [AdminDishController::class, 'edit']);   // ancien modifier.php
         $router->post('/dashboard/plats/{id}/modifier',   [AdminDishController::class, 'update']);

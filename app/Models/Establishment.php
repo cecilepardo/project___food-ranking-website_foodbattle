@@ -17,4 +17,10 @@ class Establishment
             ->query('SELECT * FROM establishments ORDER BY id')
             ->fetchAll();
     }
+
+    public static function create(string $name, string $city, string $address): void
+    {
+        $statement = Database::get()->prepare('INSERT INTO establishments (name, city, address) VALUES (?, ?, ?)');
+        $statement->execute([$name, $city, $address]);
+    }
 }
