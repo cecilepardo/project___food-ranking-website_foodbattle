@@ -115,3 +115,9 @@ textarea {
 summary {
     cursor: pointer;
 }
+
+/* L'attribut hidden doit toujours masquer l'élément, même si une règle
+   comme input { display: block } lui donne un affichage */
+[hidden] {
+    display: none;
+}

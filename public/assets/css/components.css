@@ -49,6 +49,14 @@
     mask-image: url("../img/moon.svg");
 }
 
+.icon--eye {
+    mask-image: url("../img/eye.svg");
+}
+
+.icon--eye-closed {
+    mask-image: url("../img/eye-closed.svg");
+}
+
 
 /* Bouton (en pilule)
    La bordure de 2px existe sur toutes les variantes (transparente par défaut)
@@ -147,6 +155,57 @@
     width: 100%;
     margin: 0;
     padding-left: 48px;
+}
+
+
+/* Champ mot de passe avec bouton œil (afficher / masquer la saisie)
+   Le bouton est posé par-dessus le bord droit du champ.
+   Il est caché (hidden) tant que app.js ne l'a pas activé.
+   -------------------------------------------------------------------------- */
+
+.password-field {
+    position: relative;
+    width: fit-content;
+    max-width: 100%;
+    margin: var(--space-xs) 0 var(--space-sm);
+}
+
+/* Le padding droit laisse la place au bouton */
+.password-field__input {
+    margin: 0;
+    padding-right: 56px;
+}
+
+/* :not([hidden]) : sans cela, display: flex annulerait l'attribut hidden */
+.password-field__toggle:not([hidden]) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.password-field__toggle {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transform: translateY(-50%);
+}
+
+.password-field__toggle:hover {
+    color: var(--color-highlight);
+}
+
+/* Une seule icône visible : l'œil ouvert pour afficher, l'œil barré pour masquer */
+.password-field__toggle[aria-pressed="false"] .icon--eye-closed,
+.password-field__toggle[aria-pressed="true"] .icon--eye {
+    display: none;
 }
 
 
