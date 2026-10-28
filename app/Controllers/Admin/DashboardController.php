@@ -47,9 +47,16 @@ class DashboardController extends Controller
 
     private function showDashboard(?string $error = null): void
     {
+        // Tri du tableau : une valeur inconnue revient à l'ordre par défaut.
+        $sort       = $this->queryString('tri');
+        $sort       = in_array($sort, Dish::SORTS, true) ? $sort : '';
+        $descending = $this->queryString('ordre') === 'desc';
+
         $this->render('admin-dashboard', [
             'title'          => 'Dashboard',
-            'dishes'         => Dish::allWithEstablishment(),
+            'dishes'         => Dish::allWithEstablishment($sort, $descending),
+            'sort'           => $sort,
+            'descending'     => $descending,
             'establishments' => Establishment::all(),
             'categories'     => Dish::CATEGORIES,
             'error'          => $error,

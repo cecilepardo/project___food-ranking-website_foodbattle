@@ -20,6 +20,9 @@ class Dish
     /** Prix maximum accepté par les formulaires (la colonne NUMERIC(8,2) planterait au-delà de 999 999,99). */
     public const MAX_PRICE = 999.99;
 
+    /** Tris possibles du tableau du dashboard (valeur de ?tri=…). */
+    public const SORTS = ['lieu', 'prix', 'categorie'];
+
     /**
      * Plats de la carte, avec leur restaurant, leur note moyenne et leur nombre de votes.
      * Filtres optionnels : nom du plat et catégorie.
@@ -116,16 +119,30 @@ class Dish
     }
 
     /**
-     * Tous les plats avec le nom de leur restaurant (tableau du dashboard).
+     * Tous les plats avec leur restaurant et sa ville (tableau du dashboard).
+     * Tri optionnel : voir SORTS ('' = ordre d'ajout).
      */
-    public static function allWithEstablishment(): array
+    public static function allWithEstablishment(string $sort = '', bool $descending = false): array
     {
+        $direction = $descending ? 'DESC' : 'ASC';
+
+        // Liste blanche : un nom de colonne ne peut pas passer par un « ? » de requête préparée,
+        // on n'insère donc jamais la valeur reçue dans le SQL, seulement une de ces chaînes fixes.
+        // d.id en dernier départage les égalités (même prix…) : l'ordre reste stable d'un affichage à l'autre.
+        $orderBy = match ($sort) {
+            'lieu'      => "e.city $direction, e.name $direction, d.id",
+            'prix'      => "d.price $direction, d.id",
+            'categorie' => "d.category $direction, d.id",
+            default     => 'd.id',
+        };
+
         return Database::get()->query(
-            'SELECT d.*,
-                    e.name AS restaurant
+            "SELECT d.*,
+                    e.name AS restaurant,
+                    e.city
              FROM dishes d
              JOIN establishments e ON e.id = d.establishment_id
-             ORDER BY d.id'
+             ORDER BY $orderBy"
         )->fetchAll();
     }
 
