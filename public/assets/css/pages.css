@@ -108,9 +108,15 @@
     flex: 1;
 }
 
+/* Note moyenne et nombre de votes, sous le prix (même ligne que sur les cartes de l'accueil) */
+.dish-detail__rating {
+    font-weight: var(--font-weight-bold);
+}
+
 .review {
     margin: var(--space-md) 0;
     padding: var(--space-md) 20px;
+    overflow-wrap: anywhere;   /* un mot sans espace trop long (URL, « aaaa… ») passe à la ligne au lieu de déborder */
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     background: var(--color-surface);
