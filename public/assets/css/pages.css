@@ -155,10 +155,7 @@
    -------------------------------------------------------------------------- */
 
 @media (max-width: 700px) {
-    /* Le logo passe au-dessus du texte */
     .hero {
-        flex-direction: column-reverse;
-        align-items: flex-start;
         padding: var(--space-lg);
     }
 
@@ -166,9 +163,20 @@
         font-size: var(--font-size-h1);
     }
 
+    /* La recherche occupe toute la ligne : catégorie et bouton passent dessous */
+    .filters__search {
+        flex-basis: 100%;
+    }
+
+    /* Le logo est déjà dans le header : on évite le doublon sur petit écran */
     .hero__logo {
-        width: 200px;
-        height: 80px;
+        display: none;
+    }
+
+    /* Pilules plus compactes : « Plats · Établissements · Modération » tiennent sur une ligne */
+    .admin-nav__link {
+        padding: 6px 14px;
+        font-size: var(--font-size-small);
     }
 
     .dish-detail {

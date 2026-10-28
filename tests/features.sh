@@ -155,7 +155,7 @@ for s in pending:'En attente':'Publié' published:'Publiés':'En attente' reject
     req a GET "/moderation?statut=$status"
     check "?statut=$status : pilule « $label ($n) » active" active_filter "$label ($n)"
     check "?statut=$status : $n avis listés, aucun « $other »" \
-        bash -c '[ "$(grep -c "<td>$1</td>" <<<"$2")" = 0 ] && [ "$(grep -o "action=\"/moderation/[0-9]*/" <<<"$2" | sort -u | wc -l)" = "$3" ]' \
+        bash -c '[ "$(grep -c "<td[^>]*>$1</td>" <<<"$2")" = 0 ] && [ "$(grep -o "action=\"/moderation/[0-9]*/" <<<"$2" | sort -u | wc -l)" -eq "$3" ]' \
         _ "$other" "$BODY" "$n"
 done
 req a GET "/moderation?statut=pending"
@@ -256,7 +256,7 @@ check "établissement enregistré en base, accents compris" \
     [ "$(sql "SELECT city || ' | ' || address FROM establishments WHERE name = 'Chez René $RUN'")" = "Villeneuve-d’Ascq | 2 allée des Tilleuls" ]
 req a GET "/dashboard/etablissements?added=1"
 check "message « L'établissement a été ajouté. » affiché" has 'établissement a été ajouté.'
-check "… listé dans la table des établissements" has "<td>Chez René $RUN</td>"
+check "… listé dans la table des établissements" has "<td[^>]*>Chez René $RUN</td>"
 req a GET /dashboard
 check "… et proposé dans « Ajouter un plat »" has ">Chez René $RUN</option>"
 add_establishment a "+++" Lille "1+rue"
@@ -447,7 +447,7 @@ check "user GET /dashboard/etablissements => 403" [ "$CODE" = 403 ]
 login nav admin@foodbattle.local foodbattle-admin
 EST=$(sql "SELECT name FROM establishments ORDER BY id LIMIT 1")
 req nav GET /dashboard/etablissements
-check "admin GET /dashboard/etablissements => 200, « $EST » listé" bash -c '[ "$1" = 200 ] && grep -q "<td>$2</td>" <<<"$3"' _ "$CODE" "$EST" "$BODY"
+check "admin GET /dashboard/etablissements => 200, « $EST » listé" bash -c '[ "$1" = 200 ] && grep -q "<td[^>]*>$2</td>" <<<"$3"' _ "$CODE" "$EST" "$BODY"
 
 # Une seule pilule active, celle de la page affichée (les liens sont sur une ligne chacun dans le partial)
 active_link() {  # active_link CHEMIN

@@ -21,7 +21,7 @@ use App\Core\View;
     <p class="message">L'établissement a été ajouté.</p>
 <?php endif; ?>
 
-<table class="table">
+<table class="table table--cards">
     <thead>
         <tr>
             <th>Nom</th>
@@ -32,9 +32,9 @@ use App\Core\View;
     <tbody>
         <?php foreach ($establishments as $establishment): ?>
             <tr>
-                <td><?= e($establishment['name']) ?></td>
-                <td><?= e($establishment['city']) ?></td>
-                <td><?= e($establishment['address']) ?></td>
+                <td data-label="Nom"><?= e($establishment['name']) ?></td>
+                <td data-label="Ville"><?= e($establishment['city']) ?></td>
+                <td data-label="Adresse"><?= e($establishment['address']) ?></td>
             </tr>
         <?php endforeach; ?>
     </tbody>

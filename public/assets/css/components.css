@@ -439,6 +439,7 @@
 
 /* L'espace entre les champs vient du gap : on retire la marge des labels (base.css) */
 .form-panel label {
+    max-width: 100%;   /* jamais plus large que le formulaire (zone de texte sur mobile) */
     margin: 0;
 }
 
@@ -554,5 +555,60 @@
     .table th,
     .table td {
         padding: 7px;
+    }
+
+    /* Tableau en cartes (.table--cards) : chaque ligne devient une carte,
+       chaque cellule une ligne « libellé · valeur » (libellé lu dans data-label). */
+    .table--cards,
+    .table--cards tbody,
+    .table--cards tr {
+        display: block;
+    }
+
+    .table--cards {
+        background: none;
+    }
+
+    /* Les en-têtes de colonnes sont remplacés par les libellés : masqués à l'écran,
+       gardés pour les lecteurs d'écran (même technique que .visually-hidden) */
+    .table--cards thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+    }
+
+    .table--cards tr {
+        margin-bottom: var(--space-md);
+        padding: var(--space-sm) var(--space-md);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface);
+    }
+
+    /* Libellé à gauche (colonne fixe), valeur à droite */
+    .table--cards td {
+        display: grid;
+        grid-template-columns: 6.5rem 1fr;
+        gap: var(--space-sm);
+        padding: 6px 0;
+        border: 0;
+    }
+
+    .table--cards td::before {
+        content: attr(data-label);
+        color: var(--color-text-muted);
+        font-weight: var(--font-weight-bold);
+    }
+
+    /* Cellule sans libellé (les actions) : boutons en bas de la carte, alignés à gauche */
+    .table--cards td:not([data-label]) {
+        display: block;
+        padding-top: var(--space-sm);
+    }
+
+    .table--cards .table__actions {
+        justify-content: flex-start;
     }
 }
