@@ -22,9 +22,9 @@ class Dish
 
     /**
      * Plats de la carte, avec leur restaurant, leur note moyenne et leur nombre de votes.
-     * Filtres optionnels : nom du plat et catégorie.
+     * Filtres optionnels : texte recherché (nom du plat ou de l'établissement) et catégorie.
      */
-    public static function search(string $name = '', string $category = ''): array
+    public static function search(string $search = '', string $category = ''): array
     {
         $sql = "SELECT d.*,
                        e.name AS restaurant,
@@ -36,9 +36,12 @@ class Dish
                 WHERE 1 = 1";
         $params = [];
 
-        if ($name !== '') {
-            $sql .= ' AND d.name ILIKE ?';
-            $params[] = '%' . self::escapeLike($name) . '%';
+        if ($search !== '') {
+            // Le même motif sert pour les deux colonnes : on le passe deux fois (un « ? » par valeur).
+            $sql .= ' AND (d.name ILIKE ? OR e.name ILIKE ?)';
+            $pattern  = '%' . self::escapeLike($search) . '%';
+            $params[] = $pattern;
+            $params[] = $pattern;
         }
 
         if ($category !== '') {

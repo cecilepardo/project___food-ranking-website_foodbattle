@@ -363,6 +363,12 @@ req s GET '/?q=_'
 check "recherche « _ » => cherchée comme un caractère (aucun plat)" hasnt 'href="/plat/'
 req s GET '/?q=Smash'
 check "recherche « Smash » => toujours fonctionnelle" has 'Le Double Smash'
+req s GET '/?q=Planque'
+check "recherche « Planque » (établissement) => ses plats sont listés" \
+    bash -c 'grep -q "Le Nordiste" <<<"$1" && grep -q "Le Classique" <<<"$1"' _ "$BODY"
+check "… et seulement eux" hasnt 'Le Double Smash'
+req s GET '/?q=Planque&categorie=pizza'
+check "recherche « Planque » + catégorie pizza => aucun plat (le filtre catégorie s'applique)" hasnt 'href="/plat/'
 req s GET "/?q=$(printf 'x%.0s' {1..200})"
 check "recherche de 200 caractères => coupée à 100" \
     bash -c 'grep -q "name=\"q\" value=\"$(printf "x%.0s" {1..100})\"" <<<"$1" && ! grep -q "name=\"q\" value=\"x\{101\}" <<<"$1"' _ "$BODY"
