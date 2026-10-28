@@ -48,7 +48,7 @@ $rating = $dish['average'] ? score($dish['average']) . '/5' : '—';
             <a class="btn" href="/plat/<?= $dishId ?>/participer">♥ Connecte-toi pour voter</a>
         <?php endif; ?>
 
-        <small>Le vote désigne ton favori ; la note exprime ton appréciation sur 5.</small>
+        <p><small>Le vote désigne ton favori ; la note exprime ton appréciation sur 5.</small></p>
     </div>
 </section>
 
