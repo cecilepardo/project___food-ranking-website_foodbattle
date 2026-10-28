@@ -133,6 +133,21 @@ check "requêtes bloquées non comptées (20 lignes pour l'IP)" [ "$(sql "SELECT
 req f GET /
 check "le reste du site n'est pas bloqué" [ "$CODE" = 200 ]
 
+section "Limitation par IP : les connexions réussies ne comptent pas"
+ip_hits() { sql "SELECT COUNT(*) FROM rate_limit_hits WHERE key LIKE 'auth-ip:%'"; }
+for i in $(seq 1 12); do step1 "ip-ok$i" user@foodbattle.local; password "ip-ok$i" user@foodbattle.local foodbattle-user; done
+check "12 connexions réussies d'affilée (24 POST) => la dernière passe" [ "$CODE" = 302 -a "$LOC" = / ]
+check "… et aucune tentative comptée pour l'IP" [ "$(ip_hits)" = 0 ]
+step1 ip-p user@foodbattle.local; password ip-p user@foodbattle.local faux
+check "mot de passe faux => étapes 1 et 2 comptées (2)" [ "$(ip_hits)" = 2 ]
+sql "DELETE FROM rate_limit_hits" >/dev/null
+step1 ip-q "autre-$RUN@test.fr"                       # étape 1 sur un autre email (énumération)…
+password ip-q user@foodbattle.local foodbattle-user   # … puis connexion directe à son propre compte
+check "étape 1 sur un autre email puis connexion à son compte => l'étape 1 reste comptée (1)" [ "$CODE" = 302 -a "$(ip_hits)" = 1 ]
+sql "DELETE FROM rate_limit_hits" >/dev/null
+step1 ip-r "ipfree-$RUN@test.fr"; register ip-r "ipfree-$RUN@test.fr" "Ipfree$RUN" motdepasse
+check "inscription réussie => aucune tentative comptée pour l'IP" [ "$CODE" = 302 -a "$(ip_hits)" = 0 ]
+
 section "Nettoyage des tentatives de plus de 24 h"
 sql "INSERT INTO rate_limit_hits (key, hit_at) VALUES ('vieux', NOW() - INTERVAL '2 days')" >/dev/null
 step1 g user@foodbattle.local
