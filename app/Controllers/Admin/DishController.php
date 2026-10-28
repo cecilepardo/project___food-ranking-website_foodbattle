@@ -47,10 +47,8 @@ class DishController extends Controller
         }
 
         Dish::update($id, $name, $price);
-        $dish['name']  = $name;
-        $dish['price'] = $price;
 
-        $this->showForm($dish, saved: true);
+        $this->redirect('/dashboard?updated=1');
     }
 
     /**
@@ -66,13 +64,12 @@ class DishController extends Controller
         $this->redirect('/dashboard?deleted=1');
     }
 
-    private function showForm(array $dish, ?string $error = null, bool $saved = false): void
+    private function showForm(array $dish, ?string $error = null): void
     {
         $this->render('admin-edit', [
             'title' => 'Modifier un plat',
             'dish'  => $dish,
             'error' => $error,
-            'saved' => $saved,
         ]);
     }
 

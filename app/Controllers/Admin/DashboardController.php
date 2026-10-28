@@ -54,6 +54,7 @@ class DashboardController extends Controller
             'categories'     => Dish::CATEGORIES,
             'error'          => $error,
             'added'          => isset($_GET['added']),
+            'updated'        => isset($_GET['updated']),
             'deleted'        => isset($_GET['deleted']),
         ]);
     }
