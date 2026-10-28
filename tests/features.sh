@@ -97,8 +97,9 @@ top=$(sql "SELECT d.name FROM dishes d
 req x GET /classement
 first=$(grep -o '<a href="/plat/[0-9]*">[^<]*</a>' <<<"$BODY" | head -1 | sed 's/<[^>]*>//g')
 check "classement : le plat le mieux noté est en tête ($top)" [ "$first" = "$(sed "s/'/\&#039;/g" <<<"$top")" ]
-notes=$(grep -A4 '<a href="/plat/' <<<"$BODY" | grep -oE '<td>([0-9],[0-9]|—)</td>' | sed 's/<[^>]*>//g; s/,/./; s/—/-1/')
-check "classement : notes affichées dans l'ordre décroissant" bash -c '[ "$1" = "$(sort -rn <<<"$1")" ]' _ "$notes"
+notes=$(grep -A4 '<a href="/plat/' <<<"$BODY" | grep -oE '<td[^>]*>([0-9],[0-9]|—)</td>' | sed 's/<[^>]*>//g; s/,/./; s/—/-1/')
+# [ -n ] : sans note trouvée (motif HTML périmé), la comparaison passerait à vide
+check "classement : notes affichées dans l'ordre décroissant" bash -c '[ -n "$1" ] && [ "$1" = "$(sort -rn <<<"$1")" ]' _ "$notes"
 check "contrainte prix >= 0 en base" grep -q 'dishes_price_check' <<<"$(sql "UPDATE dishes SET price=-1 WHERE id=1")"
 check "contrainte catégorie en base" grep -q 'dishes_category_check' <<<"$(sql "UPDATE dishes SET category='kebab' WHERE id=1")"
 
@@ -437,7 +438,7 @@ else
     req x GET /classement
     if grep -q "href=\"/plat/$D\"" <<<"$BODY"; then
         check "classement : plat $D affiché $exp (avis en attente ignorés)" \
-            bash -c 'grep -A4 "href=\"/plat/$1\"" <<<"$2" | grep -q "<td>$3</td>"' _ "$D" "$BODY" "$exp"
+            bash -c 'grep -A4 "href=\"/plat/$1\"" <<<"$2" | grep -q "<td[^>]*>$3</td>"' _ "$D" "$BODY" "$exp"
     fi
 fi
 # Le classement montre 10 plats sur 12 et met les plats sans avis publié en dernier :
@@ -449,7 +450,7 @@ kept=$(sql "SELECT string_agg(id::text, ',') FROM ratings WHERE dish_id IN ($TOP
 [ -n "$kept" ] && sql "UPDATE ratings SET status = 'pending' WHERE id IN ($kept)" >/dev/null
 req x GET /classement
 check "classement : plat sans avis publié => « — » au lieu de « 0,0 »" \
-    bash -c 'grep -A4 "href=\"/plat/$1\"" <<<"$2" | grep -q "<td>—</td>"' _ "$TOP" "$BODY"
+    bash -c 'grep -A4 "href=\"/plat/$1\"" <<<"$2" | grep -q "<td[^>]*>—</td>"' _ "$TOP" "$BODY"
 check "classement : plat sans avis publié classé après les plats notés (10e)" \
     bash -c '[ "$(grep -o "<a href=\"/plat/[0-9]*\"" <<<"$2" | sed -n 10p)" = "<a href=\"/plat/$1\"" ]' _ "$TOP" "$BODY"
 [ -n "$kept" ] && sql "UPDATE ratings SET status = 'published' WHERE id IN ($kept)" >/dev/null
@@ -609,6 +610,22 @@ sql "DELETE FROM votes WHERE user_id IN (SELECT id FROM users WHERE email LIKE '
 sql "DELETE FROM users WHERE email LIKE 'fx-$RUN-%@test.fr'" >/dev/null
 
 # En dernier : on coupe la base quelques secondes pour provoquer une vraie erreur serveur.
+section "Accessibilité (lien d'évitement, titres d'onglet, classement en cartes)"
+for path in / /classement /plat/1 /connexion /mentions-legales /nexiste-pas; do
+    req anon GET "$path"
+    check "$path : lien « Aller au contenu » vers <main id=\"contenu\">" \
+        bash -c 'grep -q "<a class=\"skip-link\" href=\"#contenu\">Aller au contenu</a>" <<<"$1" && grep -q "<main class=\"page\" id=\"contenu\">" <<<"$1"' _ "$BODY"
+done
+req anon GET /plat/1
+check "fiche plat : le nom du plat est dans le titre de l'onglet" has '<title>Le Double Smash · FoodBattle</title>'
+login a11y admin@foodbattle.local foodbattle-admin
+req a11y GET /dashboard/plats/1/modifier
+check "modification : le nom du plat est dans le titre de l'onglet" has '<title>Modifier Le Double Smash · FoodBattle</title>'
+check "… et dans le titre de la page" has '<h1>Modifier Le Double Smash</h1>'
+req anon GET /classement
+check "classement : tableau en cartes sur mobile (pas de défilement horizontal à 320 px)" \
+    bash -c 'grep -q "class=\"table table--cards\"" <<<"$1" && grep -q "data-label=\"Plat\"" <<<"$1"' _ "$BODY"
+
 section "Page 500 (base de données coupée)"
 docker compose stop db >/dev/null 2>&1
 req ep GET /

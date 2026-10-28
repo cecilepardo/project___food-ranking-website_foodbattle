@@ -29,10 +29,12 @@ use App\Core\Theme;
     <link rel="stylesheet" href="<?= e(asset('/assets/css/pages.css')) ?>">
 </head>
 <body>
+    <?php /* Premier arrêt du clavier : permet de sauter l'en-tête et d'aller directement au contenu */ ?>
+    <a class="skip-link" href="#contenu">Aller au contenu</a>
 
     <?= \App\Core\View::partial('header') ?>
 
-    <main class="page">
+    <main class="page" id="contenu">
         <?= $content ?>
     </main>
 

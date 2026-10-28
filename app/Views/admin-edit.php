@@ -10,7 +10,7 @@ use App\Core\View;
 ?>
 <?= View::partial('admin-nav') ?>
 
-<h1>Modifier un plat</h1>
+<h1>Modifier <?= e($dish['name']) ?></h1>
 
 <?php if ($error): ?>
     <p class="message message--error" role="alert"><?= e($error) ?></p>

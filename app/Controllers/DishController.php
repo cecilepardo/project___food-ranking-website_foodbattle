@@ -37,7 +37,7 @@ class DishController extends Controller
         }
 
         $this->render('dish', [
-            'title'         => 'Le plat',
+            'title'         => $dish['name'],
             'dish'          => $dish,
             'reviews'       => Rating::publishedForDish($id),
             'currentUser'   => Auth::user(),

@@ -13,6 +13,8 @@
     --color-bg: #fff8f1;
     --color-surface: #ffffff;
     --color-surface-raised: #ffebd6;
+    /* Champs en carte : « relevés » (le fond de page, trop proche du blanc, ne se verrait pas) */
+    --color-field-bg: var(--color-surface-raised);
 
     /* Bordures */
     --color-border: #ebd5bf;
