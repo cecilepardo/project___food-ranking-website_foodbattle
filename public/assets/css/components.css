@@ -18,6 +18,28 @@
 }
 
 
+/* Lien d'évitement : hors de l'écran, il n'apparaît qu'en recevant le focus clavier
+   -------------------------------------------------------------------------- */
+
+.skip-link {
+    position: absolute;
+    top: var(--space-sm);
+    left: var(--space-sm);
+    z-index: 10;
+    padding: 10px 20px;
+    border-radius: var(--radius-pill);
+    background: var(--color-highlight-bg);
+    color: var(--color-on-highlight);
+    font-weight: var(--font-weight-extrabold);
+    text-decoration: none;
+    transform: translateY(-200%);
+}
+
+.skip-link:focus {
+    transform: none;
+}
+
+
 /* Icône
    Le fichier SVG sert de masque (sa forme), la couleur vient de currentColor :
    l'icône prend la couleur du texte de son parent, donc s'adapte au thème.
@@ -467,6 +489,14 @@
 }
 
 /* Formulaire placé dans un encadré (dashboard) : l'encadré porte déjà l'ombre */
+/* Champs posés sur la carte : un fond différent de la carte les rend repérables,
+   la bordure seule étant trop discrète (voir --color-field-bg) */
+.form-panel input,
+.form-panel select,
+.form-panel textarea {
+    background: var(--color-field-bg);
+}
+
 .panel .form-panel {
     box-shadow: none;
 }

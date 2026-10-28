@@ -67,7 +67,7 @@ class DishController extends Controller
     private function showForm(array $dish, ?string $error = null): void
     {
         $this->render('admin-edit', [
-            'title' => 'Modifier un plat',
+            'title' => 'Modifier ' . $dish['name'],
             'dish'  => $dish,
             'error' => $error,
         ]);
