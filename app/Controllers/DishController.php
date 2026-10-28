@@ -21,6 +21,15 @@ class DishController extends Controller
      */
     public function show(int $id): void
     {
+        $this->renderDish($id);
+    }
+
+    /**
+     * Affiche la fiche du plat. Après un avis refusé, $rejectedRating garde la saisie
+     * (note, commentaire) : le formulaire est réaffiché rempli, rien n'est à retaper.
+     */
+    private function renderDish(int $id, ?array $rejectedRating = null, int $statusCode = 200): void
+    {
         $dish = Dish::findWithEstablishment($id);
 
         if ($dish === null) {
@@ -29,15 +38,18 @@ class DishController extends Controller
         }
 
         $this->render('dish', [
-            'title'        => 'Le plat',
-            'dish'         => $dish,
-            'reviews'      => Rating::publishedForDish($id),
-            'currentUser'  => Auth::user(),
-            'saved'        => isset($_GET['ok']),
-            'alreadyVoted' => isset($_GET['deja']),
-            'alreadyRated' => isset($_GET['deja-avis']),
-            'ratingSent'   => isset($_GET['avis']),
-        ]);
+            'title'         => 'Le plat',
+            'dish'          => $dish,
+            'reviews'       => Rating::publishedForDish($id),
+            'currentUser'   => Auth::user(),
+            'saved'         => isset($_GET['ok']),
+            'alreadyVoted'  => isset($_GET['deja']),
+            'alreadyRated'  => isset($_GET['deja-avis']),
+            'ratingSent'    => isset($_GET['avis']),
+            'ratingError'   => $rejectedRating !== null,
+            'ratingScore'   => $rejectedRating['score'] ?? null,
+            'ratingComment' => $rejectedRating['comment'] ?? '',
+        ], $statusCode);
     }
 
     /**
@@ -79,7 +91,8 @@ class DishController extends Controller
         $comment = trim($this->postString('comment'));
 
         if (!$this->isValidRating($score, $comment)) {
-            $this->abort(422, 'Vérifie les champs de ton avis.');
+            $this->renderDish($id, ['score' => $score, 'comment' => $comment], 422);
+            return;
         }
 
         if (!Rating::create($id, $this->currentUserId(), $score, $comment)) {

@@ -56,18 +56,26 @@ class Router
     {
         $path = parse_url($uri, PHP_URL_PATH) ?: '/';
 
+        // HEAD = GET sans le corps de la page (Apache le retire) : il utilise les routes GET
+        $routeMethod = $method === 'HEAD' ? 'GET' : $method;
+
+        // Méthodes acceptées par cette adresse, si elle existe avec une autre méthode
+        $allowedMethods = [];
+
         foreach ($this->routes as $route) {
-            if ($route['method'] !== $method) {
+            if (!preg_match($route['pattern'], $path, $matches)) {
                 continue;
             }
-            if (!preg_match($route['pattern'], $path, $matches)) {
+            if ($route['method'] !== $routeMethod) {
+                $allowedMethods[] = $route['method'];
                 continue;
             }
 
             [$controllerClass, $methodName] = $route['action'];
             $params = $this->extractParams($matches);
             if ($params === null) {
-                break; // id trop grand : aucun plat ni avis ne peut l'avoir
+                $this->pageNotFound(); // id trop grand : aucun plat ni avis ne peut l'avoir
+                return;
             }
 
             // Les middlewares passent avant la création du controller : s'ils bloquent, aucun code du controller ne s'exécute.
@@ -75,6 +83,11 @@ class Router
 
             $controller = new $controllerClass();
             $controller->$methodName(...$params);
+            return;
+        }
+
+        if ($allowedMethods !== []) {
+            $this->methodNotAllowed($allowedMethods);
             return;
         }
 
@@ -136,5 +149,13 @@ class Router
     {
         http_response_code(404);
         echo View::render('error-404', ['title' => 'Page introuvable']);
+    }
+
+    private function methodNotAllowed(array $allowedMethods): void
+    {
+        // Obligatoire avec un 405 : les méthodes que cette adresse accepte
+        header('Allow: ' . implode(', ', array_unique($allowedMethods)));
+        http_response_code(405);
+        echo View::render('error-405', ['title' => 'Action impossible']);
     }
 }

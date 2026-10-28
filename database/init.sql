@@ -30,7 +30,7 @@ CREATE TABLE ratings (
     user_id    INTEGER     REFERENCES users(id) ON DELETE SET NULL,
     score      INTEGER     NOT NULL CHECK (score BETWEEN 1 AND 5),
     comment    TEXT        NOT NULL,
-    status     VARCHAR(20) NOT NULL DEFAULT 'published' CHECK (status IN ('pending', 'published', 'rejected')),
+    status     VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'published', 'rejected')),
     created_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (dish_id, user_id)
 );

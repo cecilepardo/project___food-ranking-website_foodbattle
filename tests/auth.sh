@@ -15,7 +15,7 @@ check "GET /dashboard => 302 vers /connexion" [ "$CODE" = 302 -a "$LOC" = /conne
 req v GET /inscription
 check "ancienne route GET /inscription => 404" [ "$CODE" = 404 ]
 req v GET /connexion/mot-de-passe
-check "GET /connexion/mot-de-passe (POST uniquement) => 404" [ "$CODE" = 404 ]
+check "GET /connexion/mot-de-passe (POST uniquement) => 405" [ "$CODE" = 405 ]
 
 section "Étape 1 : email"
 req v GET /connexion

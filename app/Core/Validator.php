@@ -42,11 +42,12 @@ class Validator
     /**
      * Texte libre (un avis) : au moins un caractère visible, et aucun caractère invisible piégeant.
      * Refusés : les caractères de contrôle (\p{Cc}) sauf tabulation et retours à la ligne,
-     * et les caractères de format invisibles (\p{Cf}, ex. l'espace sans largeur U+200B).
+     * et les caractères de format invisibles (\p{Cf}, ex. l'espace sans largeur U+200B), sauf U+200D.
      */
     public static function isCleanText(string $text): bool
     {
-        $hasForbiddenChar = preg_match('/(?![\t\n\r])\p{Cc}|\p{Cf}/u', $text) === 1;
+        // U+200D (« liant sans largeur ») est permis : il colle les emojis composés (👨‍👩‍👧, ❤️‍🔥)
+        $hasForbiddenChar = preg_match('/(?![\t\n\r])\p{Cc}|(?!\x{200D})\p{Cf}/u', $text) === 1;
         $hasVisibleChar   = preg_match('/[^\s\p{Cf}]/u', $text) === 1;
 
         return !$hasForbiddenChar && $hasVisibleChar;

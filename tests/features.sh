@@ -53,6 +53,7 @@ check "vote sans jeton CSRF => 403" [ "$CODE" = 403 ]
 section "PR #5 — contraintes en base"
 check "statut d'avis inventé refusé par la base" grep -q 'ratings_status_check' <<<"$(sql "INSERT INTO ratings(dish_id,user_id,score,comment,status) VALUES(1,NULL,3,'x','spam')")"
 check "doublon de vote (même compte, même plat) refusé par la base" grep -q 'duplicate key' <<<"$(sql "INSERT INTO votes(dish_id,user_id) SELECT 1, id FROM users WHERE nickname='Gourmand1'")"
+check "statut par défaut d'un avis en base : pending (init.sql)" grep -q "^'pending'" <<<"$(sql "SELECT column_default FROM information_schema.columns WHERE table_name = 'ratings' AND column_name = 'status'")"
 
 section "Avis rattachés au compte (et corrections de la PR #3)"
 new_account x
@@ -344,6 +345,13 @@ req f POST /plat/7/avis --data-urlencode "token=$t" --data "score=4&comment=bon%
 check "avis avec un caractère de contrôle => refusé (422)" [ "$CODE" = 422 ]
 req f POST /plat/7/avis --data-urlencode "token=$t" --data "score=4&comment=Ligne%201%0ALigne%202"
 check "avis sur deux lignes => accepté" [ "$CODE" = 302 ]
+rate f 8 2 "Trop bien"$'\xe2\x80\x8b'   # se termine par un espace sans largeur (U+200B) : refusé
+check "avis refusé => 422, fiche réaffichée avec le message d'erreur" \
+    bash -c '[ "$1" = 422 ] && grep -q "Vérifie les champs de ton avis." <<<"$2"' _ "$CODE" "$BODY"
+check "… le commentaire saisi est conservé" has '>Trop bien'
+check "… la note choisie est conservée" has 'value="2" selected'
+rate f 8 5 "Top en famille 👨‍👩‍👧 ❤️‍🔥"
+check "avis avec des emojis composés (👨‍👩‍👧, ❤️‍🔥) => accepté" [ "$CODE" = 302 ]
 req s GET '/?q=%25'
 check "recherche « % » => cherchée comme un caractère (aucun plat)" hasnt 'href="/plat/'
 req s GET '/?q=_'
@@ -361,6 +369,10 @@ expected_average() {
     sql "SELECT COALESCE(replace(to_char(ROUND(AVG(score), 1), 'FM0.0'), '.', ','), '—')
          FROM ratings WHERE dish_id = $1 AND status = 'published'"
 }
+exp=$(expected_average 1)
+v=$(sql "SELECT COUNT(*) FROM votes WHERE dish_id = 1")
+req x GET /plat/1
+check "fiche plat : note moyenne et nombre de votes affichés (★ $exp/5 · $v votes)" has "$exp/5 · $v vote"
 D=$(sql "SELECT dish_id FROM ratings GROUP BY dish_id
          HAVING ROUND(AVG(score) FILTER (WHERE status = 'published'), 1) IS DISTINCT FROM ROUND(AVG(score), 1) LIMIT 1")
 if [ -z "$D" ]; then
@@ -422,6 +434,17 @@ for path in /dashboard/plats/2147483648/supprimer /moderation/2147483648/publier
     req adm POST "$path" --data-urlencode "token=$t"
     check "admin POST $path => 404 sans erreur PHP" not_found
 done
+
+section "Méthode HTTP non acceptée => 405 au lieu de 404"
+req m GET /plat/1/vote
+check "GET /plat/1/vote (POST uniquement) => 405" [ "$CODE" = 405 ]
+check "… avec l'en-tête « Allow: POST »" grep -qi '^allow: POST' "$DIR/headers"
+req m POST /classement
+check "POST /classement (GET uniquement) => 405, « Allow: GET »" \
+    bash -c '[ "$1" = 405 ] && grep -qi "^allow: GET" "$2"' _ "$CODE" "$DIR/headers"
+check "HEAD /classement => 200, comme GET" [ "$(curl -s -o /dev/null -I -w '%{http_code}' "$BASE/classement")" = 200 ]
+req m GET /page-inexistante
+check "adresse inconnue => toujours 404" [ "$CODE" = 404 ]
 
 section "En-têtes de sécurité (clickjacking, type de contenu)"
 security_headers() {
@@ -500,7 +523,7 @@ password th user@foodbattle.local mauvais-mot-de-passe
 check "page affichée après un POST (mot de passe faux) : back=/ au lieu de /connexion/mot-de-passe" \
     bash -c 'grep -q "name=\"back\" value=\"/\"" <<<"$1" && ! grep -q "name=\"back\" value=\"/connexion" <<<"$1"' _ "$BODY"
 req th GET /connexion/mot-de-passe
-check "… car /connexion/mot-de-passe n'existe pas en GET (404)" [ "$CODE" = 404 ]
+check "… car /connexion/mot-de-passe n'existe pas en GET (405)" [ "$CODE" = 405 ]
 
 # Nettoyage : les comptes de test de ce script, avec leurs votes et leurs avis.
 # (On supprime d'abord votes et avis : ON DELETE SET NULL les garderait sinon, signés « Compte désactivé ».)

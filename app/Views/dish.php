@@ -9,10 +9,17 @@
  * @var bool       $alreadyVoted  true si l'utilisateur avait déjà voté
  * @var bool       $alreadyRated  true si l'utilisateur avait déjà donné son avis
  * @var bool       $ratingSent    true après un avis, en attente de modération
+ * @var bool       $ratingError   true si l'avis envoyé a été refusé (champs invalides)
+ * @var mixed      $ratingScore   Note saisie avant le refus (null sinon)
+ * @var string     $ratingComment Commentaire saisi avant le refus ('' sinon)
  */
 use App\Core\View;
 
 $dishId = (int) $dish['id'];
+$votes  = (int) $dish['votes'];
+
+// "4,6/5" ou "—" si personne n'a encore noté le plat (comme sur les cartes de l'accueil)
+$rating = $dish['average'] ? score($dish['average']) . '/5' : '—';
 ?>
 <p><a href="/">← Tous les plats</a></p>
 
@@ -26,6 +33,11 @@ $dishId = (int) $dish['id'];
         <p><?= e($dish['address']) ?>, <?= e($dish['city']) ?></p>
         <p><?= e($dish['description']) ?></p>
         <h3><?= euro($dish['price']) ?></h3>
+        <p class="dish-detail__rating">
+            <!-- L'étoile est décorative : un lecteur d'écran lirait "étoile noire" -->
+            <span aria-hidden="true">★</span>
+            <?= e($rating) ?> · <?= $votes ?> <?= $votes > 1 ? 'votes' : 'vote' ?>
+        </p>
 
         <?php if ($currentUser): ?>
             <form method="post" action="/plat/<?= $dishId ?>/vote">
@@ -58,6 +70,10 @@ $dishId = (int) $dish['id'];
 
 <h2>Donner mon avis</h2>
 
+<?php if ($ratingError): ?>
+    <p class="message message--error" role="alert">Vérifie les champs de ton avis.</p>
+<?php endif; ?>
+
 <?php if ($currentUser): ?>
     <form class="form-panel" method="post" action="/plat/<?= $dishId ?>/avis">
         <?= csrf_field() ?>
@@ -68,14 +84,14 @@ $dishId = (int) $dish['id'];
             Note
             <select name="score" required>
                 <?php for ($score = 5; $score >= 1; $score--): ?>
-                    <option value="<?= $score ?>"><?= $score ?>/5</option>
+                    <option value="<?= $score ?>"<?= $score === $ratingScore ? ' selected' : '' ?>><?= $score ?>/5</option>
                 <?php endfor; ?>
             </select>
         </label>
 
         <label>
             Commentaire
-            <textarea name="comment" maxlength="1000" required></textarea>
+            <textarea name="comment" maxlength="1000" required><?= e($ratingComment) ?></textarea>
         </label>
 
         <button class="btn">Publier mon avis</button>

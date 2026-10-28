@@ -55,7 +55,8 @@ class Dish
     }
 
     /**
-     * Un plat avec les informations de son restaurant, ou null s'il n'existe pas.
+     * Un plat avec les informations de son restaurant, sa note moyenne et son nombre de votes,
+     * ou null s'il n'existe pas.
      */
     public static function findWithEstablishment(int $id): ?array
     {
@@ -63,7 +64,9 @@ class Dish
             'SELECT d.*,
                     e.name AS restaurant,
                     e.city,
-                    e.address
+                    e.address,
+                    (SELECT AVG(score) FROM ratings WHERE dish_id = d.id AND status = \'published\') AS average,
+                    (SELECT COUNT(*)   FROM votes   WHERE dish_id = d.id) AS votes
              FROM dishes d
              JOIN establishments e ON e.id = d.establishment_id
              WHERE d.id = ?'
