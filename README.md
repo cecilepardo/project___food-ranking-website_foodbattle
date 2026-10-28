@@ -1,6 +1,6 @@
 # FoodBattle (architecture MVC)
 
-Migration du prototype `app/` vers une architecture MVC. Le comportement est identique à l'ancien site, bugs compris : chaque bug connu est marqué `BUG connu` dans le code.
+Refonte du prototype `app/` en architecture MVC, avec correction des failles et des bugs relevés à l'audit (voir « Corrections apportées »).
 
 ## Ressources
 
@@ -9,7 +9,8 @@ Migration du prototype `app/` vers une architecture MVC. Le comportement est ide
 - **Suivi des tâches** : [Trello](https://trello.com/b/RobkiE9o/foodbattle)
 
 Le Figma sert de référence visuelle. Les valeurs réellement utilisées par le site
-(couleurs, polices, espacements) sont définies dans `public/assets/css/variables.css`.
+(polices, espacements, arrondis) sont dans `public/assets/css/tokens.css`, les couleurs dans
+`theme-dark.css` et `theme-light.css`.
 Si l'un change, on met l'autre à jour.
 
 ## Lancer le projet
@@ -60,7 +61,7 @@ app/Models/             Requêtes SQL uniquement
 app/Controllers/        Lisent la requête, appellent les Models, choisissent la vue
 app/Middlewares/        Vérifications exécutées par le routeur avant le controller (ex. RequireAdmin)
 app/Views/              HTML uniquement (layout.php, partials/ et un fichier par page)
-public/assets/css/      variables → base → layout → components → pages
+public/assets/css/      fonts → tokens → theme-dark / theme-light → base → layout → components → pages
 ```
 
 Règles :
@@ -79,8 +80,26 @@ Règles :
 | `classement.php` | `/classement`                     | `RankingController::index`                  |
 | `dashboard.php`  | `/dashboard`, `POST /dashboard/plats` | `Admin\DashboardController::index`, `::store` |
 | `modifier.php?id=1` | `/dashboard/plats/1/modifier`  | `Admin\DishController::edit`, `::update`     |
-| `moderation.php` | `/moderation`                     | `Admin\ModerationController::index`          |
+| `moderation.php` | `/moderation`, `POST /moderation/1/publier`, `/refuser` | `Admin\ModerationController::index`, `::publish`, `::reject` |
+| (nouveau)        | `/dashboard/etablissements`, `POST /dashboard/etablissements` | `Admin\EstablishmentController::index`, `::store` |
 
-## Bugs connus (à corriger)
+## Corrections apportées
 
-Rechercher `BUG connu` dans le projet pour les retrouver tous.
+- **Sécurité** : sorties échappées (XSS), connexion par compte avec rôle admin, jeton CSRF sur chaque formulaire,
+  limitation des tentatives de connexion, cookie de session `HttpOnly` / `SameSite`, erreurs masquées hors dev,
+  en-têtes `X-Frame-Options` / `X-Content-Type-Options`, versions d'Apache et de PHP masquées.
+- **Bugs** : filtre tacos, classement par note moyenne, prix enregistré, votes uniques par compte,
+  moyennes calculées sur les seuls avis publiés, id hors limites → 404, UTF-8 invalide → 400.
+- **Fonctionnalités** : modération réelle des avis (publier / refuser, filtre par statut),
+  suppression d'un plat, ajout d'un établissement.
+
+## Tests
+
+Le site doit tourner (`docker compose up -d`), puis :
+
+```
+bash tests/auth.sh
+bash tests/features.sh
+```
+
+Voir `tests/README.md` pour le détail.

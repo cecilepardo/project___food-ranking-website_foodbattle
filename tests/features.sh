@@ -474,6 +474,34 @@ done
 req nav GET /classement
 check "header : Dashboard sans aria-current hors administration" [ -z "$(dashboard_link)" ]
 
+section "Nom de plat compté en caractères (pas en octets)"
+# 61 « é » = 61 caractères mais 122 octets : refusés à tort tant qu'on comptait avec strlen.
+E61=$(printf '%%C3%%A9%.0s' {1..61})
+E121=$(printf '%%C3%%A9%.0s' {1..121})
+login pb admin@foodbattle.local foodbattle-admin
+req pb GET /dashboard; t=$(token)
+req pb POST /dashboard/plats --data-urlencode "token=$t" --data "name=${E61}+$RUN" \
+    --data establishment_id=1 --data category=burger --data price=5
+check "ajout d'un plat au nom de 72 caractères accentués (133 octets) => accepté" [ "$CODE" = 302 -a "$LOC" = "/dashboard?added=1" ]
+PB=$(sql "SELECT id FROM dishes WHERE name LIKE '%$RUN'")
+req pb POST /dashboard/plats --data-urlencode "token=$t" --data "name=$E121" \
+    --data establishment_id=1 --data category=burger --data price=5
+check "ajout d'un plat au nom de 121 caractères => refusé" has 'Vérifie les champs du plat.'
+req pb GET "/dashboard/plats/$PB/modifier"; t=$(token)
+req pb POST "/dashboard/plats/$PB/modifier" --data-urlencode "token=$t" --data "name=${E61}+bis+$RUN" --data price=6
+check "modification avec un nom de 76 caractères accentués => acceptée" [ "$(sql "SELECT char_length(name) FROM dishes WHERE id=$PB")" = $((61 + 5 + ${#RUN})) ]
+sql "DELETE FROM dishes WHERE name LIKE '%$RUN'" >/dev/null
+
+section "Bouton thème : retour vers une page qui existe"
+req th GET "/classement"
+check "page GET : le bouton thème revient sur la page (back=/classement)" has 'name="back" value="/classement"'
+step1 th user@foodbattle.local
+password th user@foodbattle.local mauvais-mot-de-passe
+check "page affichée après un POST (mot de passe faux) : back=/ au lieu de /connexion/mot-de-passe" \
+    bash -c 'grep -q "name=\"back\" value=\"/\"" <<<"$1" && ! grep -q "name=\"back\" value=\"/connexion" <<<"$1"' _ "$BODY"
+req th GET /connexion/mot-de-passe
+check "… car /connexion/mot-de-passe n'existe pas en GET (404)" [ "$CODE" = 404 ]
+
 # Nettoyage : les comptes de test de ce script, avec leurs votes et leurs avis.
 # (On supprime d'abord votes et avis : ON DELETE SET NULL les garderait sinon, signés « Compte désactivé ».)
 sql "DELETE FROM ratings WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'fx-$RUN-%@test.fr') OR comment = 'Avis du compte supprime'" >/dev/null

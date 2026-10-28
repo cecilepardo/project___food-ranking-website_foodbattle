@@ -40,8 +40,9 @@ $themeIcon  = Theme::isLight() ? 'icon--moon' : 'icon--sun';
 
         <form method="post" action="/theme">
             <?= csrf_field() ?>
-            <!-- Page actuelle (avec sa recherche éventuelle) : on y revient après le changement -->
-            <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI'] ?? '/') ?>">
+            <!-- Page actuelle (avec sa recherche éventuelle) : on y revient après le changement.
+                 Sauf après un POST (formulaire en erreur) : l'URL n'a souvent pas de page GET, donc l'accueil. -->
+            <input type="hidden" name="back" value="<?= e(($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' ? ($_SERVER['REQUEST_URI'] ?? '/') : '/') ?>">
             <button class="theme-toggle">
                 <span class="icon <?= e($themeIcon) ?>" aria-hidden="true"></span>
                 <span class="visually-hidden"><?= e($themeLabel) ?></span>
