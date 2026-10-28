@@ -101,6 +101,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: var(--space-xs);   /* symbole + texte (♥, →) : en flex, l'espace tapé entre eux disparaît */
     padding: 12px var(--space-lg);
     border: 2px solid transparent;
     border-radius: var(--radius-pill);
@@ -592,6 +593,11 @@
     color: var(--color-highlight);
 }
 
+/* Libellé des pilules de tri : inutile sur ordinateur (les en-têtes cliquables suffisent), voir Mobile */
+.sort-label {
+    display: none;
+}
+
 
 /* Mobile
    -------------------------------------------------------------------------- */
@@ -659,6 +665,19 @@
 
     .table--cards .table__actions {
         justify-content: flex-start;
+    }
+
+    /* « Trier par », juste au-dessus des pilules de tri */
+    .sort-label {
+        display: block;
+        margin: var(--space-lg) 0 var(--space-sm);
+        color: var(--color-text-muted);
+        font-size: var(--font-size-small);
+        font-weight: var(--font-weight-bold);
+    }
+
+    .sort-label + .table {
+        margin-top: 0;
     }
 
     /* Tableau triable en cartes : les en-têtes triables restent visibles, en pilules de tri */

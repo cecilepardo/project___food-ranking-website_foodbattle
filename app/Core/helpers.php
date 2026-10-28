@@ -39,6 +39,18 @@ function csrf_field(): string
 }
 
 /**
+ * Attributs ARIA d'un champ de formulaire : en erreur, il est signalé invalide et relié au message
+ * (<p id="form-error">) ; $hintId relie en plus une aide permanente (ex. « 8 caractères minimum »).
+ */
+function field_attrs(bool $isInvalid, string $hintId = ''): string
+{
+    $describedBy = trim(($isInvalid ? 'form-error ' : '') . $hintId);
+
+    return ($isInvalid ? ' aria-invalid="true"' : '')
+        . ($describedBy !== '' ? ' aria-describedby="' . e($describedBy) . '"' : '');
+}
+
+/**
  * Photo d'illustration selon la catégorie du plat.
  */
 function image_for(string $category): string

@@ -122,7 +122,7 @@ class AuthController extends Controller
         $error = $this->registrationError($email, $nickname, $password);
 
         if ($error !== null) {
-            $this->showRegisterForm($email, $nickname, $error);
+            $this->showRegisterForm($email, $nickname, $error['message'], $error['field']);
             return;
         }
 
@@ -175,28 +175,29 @@ class AuthController extends Controller
     }
 
     /**
-     * Premier problème trouvé dans le formulaire d'inscription, ou null si tout est valide.
+     * Premier problème trouvé dans le formulaire d'inscription, ou null si tout est valide :
+     * ['field' => champ à signaler (null pour l'email, champ caché), 'message' => texte affiché].
      * L'email est revérifié : il vient d'un champ caché et a pu être modifié depuis l'étape 1.
      */
-    private function registrationError(string $email, string $nickname, string $password): ?string
+    private function registrationError(string $email, string $nickname, string $password): ?array
     {
         if (!$this->isValidEmail($email)) {
-            return 'Saisis une adresse email valide.';
+            return ['field' => null, 'message' => 'Saisis une adresse email valide.'];
         }
         if (!Validator::isNickname($nickname)) {
-            return 'Pseudo invalide : 3 à 30 caractères, lettres, chiffres, espaces, « . », « - » ou « _ ».';
+            return ['field' => 'nickname', 'message' => 'Pseudo invalide : 3 à 30 caractères, lettres, chiffres, espaces, « . », « - » ou « _ ».'];
         }
         if (Validator::isReservedNickname($nickname)) {
-            return 'Ce pseudo est réservé.';
+            return ['field' => 'nickname', 'message' => 'Ce pseudo est réservé.'];
         }
         if (mb_strlen($password) < self::PASSWORD_MIN_LENGTH || strlen($password) > self::PASSWORD_MAX_BYTES) {
-            return 'Le mot de passe doit contenir entre 8 et 72 caractères.';
+            return ['field' => 'password', 'message' => 'Le mot de passe doit contenir entre 8 et 72 caractères.'];
         }
         if (User::emailExists($email)) {
-            return 'Un compte existe déjà avec cet email.';
+            return ['field' => null, 'message' => 'Un compte existe déjà avec cet email.'];
         }
         if (User::nicknameExists($nickname)) {
-            return 'Ce pseudo est déjà pris.';
+            return ['field' => 'nickname', 'message' => 'Ce pseudo est déjà pris.'];
         }
 
         return null;
@@ -228,19 +229,22 @@ class AuthController extends Controller
     private function showPasswordForm(string $email, ?string $error = null, int $statusCode = 200): void
     {
         $this->render('login-password', [
-            'title' => 'Connexion',
-            'email' => $email,
-            'error' => $error,
+            'title'   => 'Connexion',
+            'email'   => $email,
+            'error'   => $error,
+            // Après un blocage (429), le mot de passe n'est pas en cause : le champ n'est pas signalé invalide.
+            'invalid' => $error !== null && $statusCode !== 429,
         ], $statusCode);
     }
 
-    private function showRegisterForm(string $email, string $nickname = '', ?string $error = null): void
+    private function showRegisterForm(string $email, string $nickname = '', ?string $error = null, ?string $errorField = null): void
     {
         $this->render('login-register', [
-            'title'    => 'Créer un compte',
-            'email'    => $email,
-            'nickname' => $nickname,
-            'error'    => $error,
+            'title'      => 'Créer un compte',
+            'email'      => $email,
+            'nickname'   => $nickname,
+            'error'      => $error,
+            'errorField' => $errorField,
         ]);
     }
 }

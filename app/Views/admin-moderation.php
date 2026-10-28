@@ -65,6 +65,8 @@ $filters = [
             <?php
             // Un avis déjà publié est « dépublié » ; un avis en attente est « refusé » (même action)
             $rejectLabel = $review['status'] === 'published' ? 'Dépublier' : 'Refuser';
+            // Lu après le bouton par les lecteurs d'écran : « Publier l'avis de Gourmand8 sur Le Double Smash »
+            $reviewName = "l'avis de " . ($review['nickname'] ?? 'Compte désactivé') . ' sur ' . $review['dish'];
             ?>
             <tr>
                 <td data-label="Plat"><?= e($review['dish']) ?></td>
@@ -77,14 +79,14 @@ $filters = [
                             <form class="inline-form" method="post" action="/moderation/<?= (int) $review['id'] ?>/publier">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="statut" value="<?= e($status ?? '') ?>">
-                                <button class="btn btn--small">Publier</button>
+                                <button class="btn btn--small">Publier<span class="visually-hidden"> <?= e($reviewName) ?></span></button>
                             </form>
                         <?php endif; ?>
                         <?php if ($review['status'] !== 'rejected'): ?>
                             <form class="inline-form" method="post" action="/moderation/<?= (int) $review['id'] ?>/refuser">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="statut" value="<?= e($status ?? '') ?>">
-                                <button class="btn btn--small btn--secondary"><?= e($rejectLabel) ?></button>
+                                <button class="btn btn--small btn--secondary"><?= e($rejectLabel) ?><span class="visually-hidden"> <?= e($reviewName) ?></span></button>
                             </form>
                         <?php endif; ?>
                     </div>
