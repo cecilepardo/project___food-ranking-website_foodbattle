@@ -345,12 +345,17 @@ req f POST /plat/7/avis --data-urlencode "token=$t" --data "score=4&comment=bon%
 check "avis avec un caractère de contrôle => refusé (422)" [ "$CODE" = 422 ]
 req f POST /plat/7/avis --data-urlencode "token=$t" --data "score=4&comment=Ligne%201%0ALigne%202"
 check "avis sur deux lignes => accepté" [ "$CODE" = 302 ]
-rate f 8 2 "Trop bien"$'\xe2\x80\x8b'   # se termine par un espace sans largeur (U+200B) : refusé
+# Se termine par un espace sans largeur (U+200B) : refusé. Envoyé déjà encodé (%E2%80%8B) :
+# sous Windows, curl réencode les octets passés en argument et le caractère deviendrait visible.
+req f GET /plat/8; t=$(token)
+req f POST /plat/8/avis --data-urlencode "token=$t" --data "score=2&comment=Trop+bien%E2%80%8B"
 check "avis refusé => 422, fiche réaffichée avec le message d'erreur" \
     bash -c '[ "$1" = 422 ] && grep -q "Vérifie les champs de ton avis." <<<"$2"' _ "$CODE" "$BODY"
 check "… le commentaire saisi est conservé" has '>Trop bien'
 check "… la note choisie est conservée" has 'value="2" selected'
-rate f 8 5 "Top en famille 👨‍👩‍👧 ❤️‍🔥"
+# « Top en famille 👨‍👩‍👧 ❤️‍🔥 », encodé pour la même raison
+req f POST /plat/8/avis --data-urlencode "token=$t" \
+    --data "score=5&comment=Top+en+famille+%F0%9F%91%A8%E2%80%8D%F0%9F%91%A9%E2%80%8D%F0%9F%91%A7+%E2%9D%A4%EF%B8%8F%E2%80%8D%F0%9F%94%A5"
 check "avis avec des emojis composés (👨‍👩‍👧, ❤️‍🔥) => accepté" [ "$CODE" = 302 ]
 req s GET '/?q=%25'
 check "recherche « % » => cherchée comme un caractère (aucun plat)" hasnt 'href="/plat/'
