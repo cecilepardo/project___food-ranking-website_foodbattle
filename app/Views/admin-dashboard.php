@@ -30,7 +30,7 @@ use App\Core\View;
 <?php endif; ?>
 
 
-<table class="table">
+<table class="table table--cards">
     <thead>
         <tr>
             <th>Plat</th>
@@ -42,9 +42,9 @@ use App\Core\View;
     <tbody>
         <?php foreach ($dishes as $dish): ?>
             <tr>
-                <td><?= e($dish['name']) ?></td>
-                <td><?= e($dish['restaurant']) ?></td>
-                <td><?= euro($dish['price']) ?></td>
+                <td data-label="Plat"><?= e($dish['name']) ?></td>
+                <td data-label="Établissement"><?= e($dish['restaurant']) ?></td>
+                <td data-label="Prix"><?= euro($dish['price']) ?></td>
                 <td>
                     <div class="table__actions">
                         <a class="btn btn--small btn--secondary" href="/dashboard/plats/<?= (int) $dish['id'] ?>/modifier">Modifier</a>

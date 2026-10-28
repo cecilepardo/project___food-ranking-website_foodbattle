@@ -50,7 +50,7 @@ $filters = [
 <?php if ($reviews === []): ?>
     <p>Aucun avis avec ce statut.</p>
 <?php else: ?>
-<table class="table">
+<table class="table table--cards">
     <thead>
         <tr>
             <th>Plat</th>
@@ -67,10 +67,10 @@ $filters = [
             $rejectLabel = $review['status'] === 'published' ? 'Dépublier' : 'Refuser';
             ?>
             <tr>
-                <td><?= e($review['dish']) ?></td>
-                <td><?= e($review['nickname'] ?? 'Compte désactivé') ?></td>
-                <td><?= e($review['comment']) ?></td>
-                <td><?= e($statusLabels[$review['status']] ?? $review['status']) ?></td>
+                <td data-label="Plat"><?= e($review['dish']) ?></td>
+                <td data-label="Pseudo"><?= e($review['nickname'] ?? 'Compte désactivé') ?></td>
+                <td data-label="Avis"><?= e($review['comment']) ?></td>
+                <td data-label="Statut"><?= e($statusLabels[$review['status']] ?? $review['status']) ?></td>
                 <td>
                     <div class="table__actions">
                         <?php if ($review['status'] !== 'published'): ?>

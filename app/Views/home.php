@@ -15,7 +15,7 @@ $count = count($dishes);
 <section class="hero">
     <div class="hero__content">
         <span class="hero__eyebrow">BURGERS · TACOS · PIZZAS</span>
-        <h1 class="hero__title">Qui mérite la première place ?</h1>
+        <h1 class="hero__title">Qui mérite la première place&nbsp;?</h1>
         <p class="hero__text">Explore les spots du quartier, note les plats et vote pour ton favori.</p>
 
         <div class="hero__actions">
