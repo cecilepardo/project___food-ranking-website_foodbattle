@@ -81,8 +81,7 @@ class DishController extends Controller
         $dish = Dish::find($id);
 
         if ($dish === null) {
-            $this->render('error-dish-not-found', ['title' => 'Modifier un plat', 'backLink' => false], 404);
-            exit;
+            $this->abort(404, "Ce plat n'existe pas ou a été supprimé.");
         }
 
         return $dish;

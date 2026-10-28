@@ -525,10 +525,44 @@ check "page affichée après un POST (mot de passe faux) : back=/ au lieu de /co
 req th GET /connexion/mot-de-passe
 check "… car /connexion/mot-de-passe n'existe pas en GET (405)" [ "$CODE" = 405 ]
 
+section "Pages d'erreur (403, 404) et mentions légales"
+error_page() {  # error_page CODE TITRE : page d'erreur du site (code en grand, titre, en-tête et pied de page)
+    [ "$CODE" = "$1" ] && grep -q "error-page__code\" aria-hidden=\"true\">$1<" <<<"$BODY" \
+        && grep -q "<title>$2 · FoodBattle" <<<"$BODY" && grep -q 'class="site-header"' <<<"$BODY" \
+        && grep -q 'href="/mentions-legales"' <<<"$BODY" && hasnt 'Fatal error' && hasnt 'Uncaught'
+}
+req ep GET /adresse-inexistante
+check "adresse inconnue => page 404 du site" error_page 404 "Page introuvable"
+req ep GET /plat/999999
+check "plat inexistant => page 404 du site" error_page 404 "Page introuvable"
+check "… avec « Ce plat n'existe pas ou a été supprimé. »" has "Ce plat n&#039;existe pas ou a été supprimé."
+req ep POST /theme
+check "formulaire sans jeton CSRF => page 403 du site" error_page 403 "Accès refusé"
+req ep POST /classement
+check "méthode non acceptée (POST /classement) => page 405 du site" error_page 405 "Action impossible"
+login ep user@foodbattle.local foodbattle-user
+req ep GET /dashboard
+check "user sur /dashboard => page 403 du site" error_page 403 "Accès refusé"
+check "… avec « Accès réservé aux administrateurs. »" has "Accès réservé aux administrateurs."
+req ep GET /mentions-legales
+check "GET /mentions-legales => 200, éditeurs et contact affichés" \
+    bash -c '[ "$1" = 200 ] && grep -q "Cécile et Ludwig" <<<"$2" && grep -q "mailto:contact@foodbattle.local" <<<"$2"' _ "$CODE" "$BODY"
+check "… sections Mentions légales, Données personnelles, Cookies" \
+    bash -c 'grep -q "id=\"mentions-legales\"" <<<"$1" && grep -q "id=\"donnees-personnelles\"" <<<"$1" && grep -q "id=\"cookies\"" <<<"$1"' _ "$BODY"
+
 # Nettoyage : les comptes de test de ce script, avec leurs votes et leurs avis.
 # (On supprime d'abord votes et avis : ON DELETE SET NULL les garderait sinon, signés « Compte désactivé ».)
 sql "DELETE FROM ratings WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'fx-$RUN-%@test.fr') OR comment = 'Avis du compte supprime'" >/dev/null
 sql "DELETE FROM votes WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'fx-$RUN-%@test.fr')" >/dev/null
 sql "DELETE FROM users WHERE email LIKE 'fx-$RUN-%@test.fr'" >/dev/null
+
+# En dernier : on coupe la base quelques secondes pour provoquer une vraie erreur serveur.
+section "Page 500 (base de données coupée)"
+docker compose stop db >/dev/null 2>&1
+req ep GET /
+check "base coupée => page 500 du site, sans trace PHP brute" error_page 500 "Erreur du serveur"
+docker compose start db >/dev/null 2>&1
+for _ in $(seq 1 30); do req ep GET /; [ "$CODE" = 200 ] && break; sleep 1; done
+check "base relancée => le site répond de nouveau (200)" [ "$CODE" = 200 ]
 
 finish

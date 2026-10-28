@@ -24,7 +24,7 @@ abstract class Controller
     }
 
     /**
-     * Arrête la requête avec un simple message texte (comportement de l'ancien code).
+     * Arrête la requête et affiche la page d'erreur du site, ex. abort(404, 'Plat introuvable.').
      */
     protected function abort(int $statusCode, string $message): never
     {

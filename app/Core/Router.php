@@ -145,17 +145,15 @@ class Router
         return $params;
     }
 
-    private function pageNotFound(): void
+    private function pageNotFound(): never
     {
-        http_response_code(404);
-        echo View::render('error-404', ['title' => 'Page introuvable']);
+        Response::abort(404, 'Cette adresse ne correspond à aucune page du site.');
     }
 
-    private function methodNotAllowed(array $allowedMethods): void
+    private function methodNotAllowed(array $allowedMethods): never
     {
         // Obligatoire avec un 405 : les méthodes que cette adresse accepte
         header('Allow: ' . implode(', ', array_unique($allowedMethods)));
-        http_response_code(405);
-        echo View::render('error-405', ['title' => 'Action impossible']);
+        Response::abort(405, "Cette adresse s'utilise uniquement depuis un formulaire du site.");
     }
 }
