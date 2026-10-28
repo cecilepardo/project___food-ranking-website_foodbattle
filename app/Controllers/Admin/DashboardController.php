@@ -62,7 +62,7 @@ class DashboardController extends Controller
     {
         $establishmentIds = array_column(Establishment::all(), 'id');
 
-        $nameIsValid          = $name !== '' && strlen($name) <= 120;
+        $nameIsValid          = $name !== '' && mb_strlen($name) <= 120;
         $priceIsValid         = $price !== false && $price !== null && $price >= 0 && $price <= Dish::MAX_PRICE;
         $categoryIsValid      = array_key_exists($category, Dish::CATEGORIES);
         $establishmentIsValid = in_array($establishmentId, $establishmentIds);
