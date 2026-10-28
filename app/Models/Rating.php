@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Core\Database;
+use PDO;
 
 /**
  * Accès à la table "ratings" (les avis et notes sur 5).
@@ -29,19 +30,36 @@ class Rating
     }
 
     /**
-     * Tous les avis avec le nom du plat (page de modération).
+     * Avis avec le nom du plat (page de modération), en attente en premier.
+     * $status (pending, published, rejected) filtre la liste ; null = tous les avis.
      */
-    public static function allWithDish(): array
+    public static function allWithDish(?string $status = null): array
     {
-        return Database::get()->query(
-            'SELECT r.*,
+        $where  = $status === null ? '' : 'WHERE r.status = ?';
+        $params = $status === null ? [] : [$status];
+
+        $statement = Database::get()->prepare(
+            "SELECT r.*,
                     d.name AS dish,
                     u.nickname
              FROM ratings r
              JOIN dishes d ON d.id = r.dish_id
              LEFT JOIN users u ON u.id = r.user_id
-             ORDER BY r.status = \'pending\' DESC, r.id DESC'
-        )->fetchAll();
+             $where
+             ORDER BY r.status = 'pending' DESC, r.id DESC"
+        );
+        $statement->execute($params);
+        return $statement->fetchAll();
+    }
+
+    /**
+     * Nombre d'avis par statut, ex. ['pending' => 6, 'published' => 30]. Un statut sans avis est absent.
+     */
+    public static function countByStatus(): array
+    {
+        return Database::get()
+            ->query('SELECT status, COUNT(*) FROM ratings GROUP BY status')
+            ->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 
     /**

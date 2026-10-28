@@ -145,6 +145,37 @@ req a GET /moderation; t=$(token)
 req a POST "/moderation/999999/publier" --data-urlencode "token=$t"
 check "avis inexistant => 404" [ "$CODE" = 404 ]
 
+section "Modération : filtre par statut"
+# L'avis $RID est refusé (section précédente).
+active_filter() { grep -A1 'aria-current="true"' <<<"$BODY" | grep -q "$1"; }   # active_filter "Refusés (3)"
+ok_page() { [ "$CODE" = 200 ] && no_php_error; }
+for s in pending:'En attente':'Publié' published:'Publiés':'En attente' rejected:'Refusés':'Publié'; do
+    IFS=: read -r status label other <<<"$s"
+    n=$(sql "SELECT COUNT(*) FROM ratings WHERE status = '$status'")
+    req a GET "/moderation?statut=$status"
+    check "?statut=$status : pilule « $label ($n) » active" active_filter "$label ($n)"
+    check "?statut=$status : $n avis listés, aucun « $other »" \
+        bash -c '[ "$(grep -c "<td>$1</td>" <<<"$2")" = 0 ] && [ "$(grep -o "action=\"/moderation/[0-9]*/" <<<"$2" | sort -u | wc -l)" = "$3" ]' \
+        _ "$other" "$BODY" "$n"
+done
+req a GET "/moderation?statut=pending"
+check "?statut=pending : l'avis refusé $RID n'est pas listé" hasnt "action=\"/moderation/$RID/"
+req a GET "/moderation?statut=rejected"
+check "?statut=rejected : l'avis refusé $RID est listé" has "action=\"/moderation/$RID/publier\""
+check "… le formulaire garde le filtre (champ caché statut=rejected)" has 'name="statut" value="rejected"'
+t=$(token)
+req a POST "/moderation/$RID/publier" --data-urlencode "token=$t" --data-urlencode statut=rejected
+check "publier depuis le filtre => 302 vers /moderation?statut=rejected&fait=published" \
+    [ "$CODE" = 302 -a "$LOC" = "/moderation?statut=rejected&fait=published" ]
+req a POST "/moderation/$RID/refuser" --data-urlencode "token=$t" --data-urlencode statut=spam
+check "filtre inconnu renvoyé => ignoré (302 vers /moderation?fait=rejected)" [ "$CODE" = 302 -a "$LOC" = "/moderation?fait=rejected" ]
+total=$(sql "SELECT COUNT(*) FROM ratings")
+for q in "" "?statut=spam" "?statut%5B%5D=pending"; do   # %5B%5D = [] (statut envoyé en tableau)
+    req a GET "/moderation$q"
+    check "/moderation$q : 200 sans erreur PHP" ok_page
+    check "/moderation$q : pilule « Tous ($total) » active" active_filter "Tous ($total)"
+done
+
 section "PR #3 × auth — modification du prix réservée à l'admin"
 login u user@foodbattle.local foodbattle-user
 req u GET /dashboard/plats/2/modifier

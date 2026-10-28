@@ -12,11 +12,21 @@ use App\Models\Rating;
  */
 class ModerationController extends Controller
 {
+    /** Valeurs acceptées pour le filtre ?statut=… */
+    private const STATUSES = ['pending', 'published', 'rejected'];
+
+    /**
+     * GET /moderation, filtrable par statut : /moderation?statut=pending
+     */
     public function index(): void
     {
+        $status = $this->statusFilter($_GET['statut'] ?? null);
+
         $this->render('admin-moderation', [
             'title'   => 'Modération',
-            'reviews' => Rating::allWithDish(),
+            'reviews' => Rating::allWithDish($status),
+            'counts'  => Rating::countByStatus(),
+            'status'  => $status,
             'done'    => $_GET['fait'] ?? null,
         ]);
     }
@@ -45,6 +55,16 @@ class ModerationController extends Controller
             $this->abort(404, 'Avis introuvable.');
         }
 
-        $this->redirect('/moderation?fait=' . $status);
+        // On revient sur la liste filtrée d'où vient le clic.
+        $filter = $this->statusFilter($this->postString('statut'));
+        $this->redirect('/moderation?' . http_build_query(['statut' => $filter, 'fait' => $status]));
+    }
+
+    /**
+     * Statut à filtrer, ou null (tous les avis) si la valeur est absente ou inconnue.
+     */
+    private function statusFilter(mixed $value): ?string
+    {
+        return in_array($value, self::STATUSES, true) ? $value : null;
     }
 }
