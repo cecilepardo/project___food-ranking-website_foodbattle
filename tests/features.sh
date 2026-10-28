@@ -513,6 +513,39 @@ for path in /dashboard /moderation /dashboard/plats/1/modifier; do
     check "admin GET $path => X-Frame-Options: DENY et X-Content-Type-Options: nosniff" security_headers
 done
 
+section "Sécurité : CSP, Referrer-Policy, jeton CSRF renouvelé, rôle admin relu en base"
+csp_headers() {
+    grep -qi "^content-security-policy: default-src 'self'; img-src 'self' https://images.pexels.com; object-src 'none'" "$DIR/headers" \
+        && grep -qi '^referrer-policy: same-origin' "$DIR/headers"
+}
+req csp GET /
+check "page normale => Content-Security-Policy et Referrer-Policy" csp_headers
+req csp GET /page-inexistante
+check "page 404 => mêmes en-têtes" csp_headers
+req csp GET /dashboard
+check "redirection (visiteur sur /dashboard) => mêmes en-têtes" csp_headers
+
+# Jeton obtenu en visiteur, puis connexion : l'ancien jeton ne doit plus être accepté
+req tok GET /connexion; old_token=$(token)
+login tok user@foodbattle.local foodbattle-user
+req tok POST /theme --data-urlencode "token=$old_token" --data "back=/"
+check "jeton CSRF d'avant la connexion => refusé (403)" [ "$CODE" = 403 ]
+req tok GET /; new_token=$(token)
+req tok POST /theme --data-urlencode "token=$new_token" --data "back=/"
+check "… le nouveau jeton fonctionne (302)" [ "$CODE" = 302 ]
+check "… et c'est bien un autre jeton" [ -n "$new_token" -a "$new_token" != "$old_token" ]
+
+# Admin de test (mot de passe : motdepasse), rétrogradé pendant qu'il est connecté
+hash=$(docker compose exec -T app php -r 'echo password_hash("motdepasse", PASSWORD_DEFAULT);')
+sql "INSERT INTO users (email, nickname, password_hash, role) VALUES ('demote-$RUN@test.fr', 'Demote$RUN', '$hash', 'admin')" >/dev/null
+login dem "demote-$RUN@test.fr" motdepasse
+req dem GET /dashboard
+check "admin de test => /dashboard accessible (200)" [ "$CODE" = 200 ]
+sql "UPDATE users SET role = 'user' WHERE email = 'demote-$RUN@test.fr'" >/dev/null
+req dem GET /dashboard
+check "rétrogradé en base, toujours connecté => /dashboard refusé (403)" [ "$CODE" = 403 ]
+sql "DELETE FROM users WHERE email = 'demote-$RUN@test.fr'" >/dev/null
+
 section "Menu de l'administration (pages Plats, Établissements, Modération)"
 req navv GET /dashboard/etablissements
 check "visiteur GET /dashboard/etablissements => 302 vers /connexion" [ "$CODE" = 302 -a "$LOC" = /connexion ]

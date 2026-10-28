@@ -63,6 +63,19 @@ class User
     }
 
     /**
+     * Rôle actuel du compte en base ('user', 'admin'), ou null si le compte n'existe plus.
+     */
+    public static function roleOf(int $id): ?string
+    {
+        $statement = Database::get()->prepare('SELECT role FROM users WHERE id = ?');
+        $statement->execute([$id]);
+
+        $role = $statement->fetchColumn();
+
+        return $role === false ? null : $role;
+    }
+
+    /**
      * Met à jour le hash (utilisé quand PHP recommande de le recalculer, voir Auth::attempt).
      */
     public static function updatePasswordHash(int $id, string $passwordHash): void
