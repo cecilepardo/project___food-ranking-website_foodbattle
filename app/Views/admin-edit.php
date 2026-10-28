@@ -4,7 +4,6 @@
  *
  * @var array       $dish
  * @var string|null $error
- * @var bool        $saved
  */
 
 use App\Core\View;
@@ -12,10 +11,6 @@ use App\Core\View;
 <?= View::partial('admin-nav') ?>
 
 <h1>Modifier un plat</h1>
-
-<?php if ($saved): ?>
-    <p class="message">Modifications enregistrées.</p>
-<?php endif; ?>
 
 <?php if ($error): ?>
     <p class="message message--error" role="alert"><?= e($error) ?></p>

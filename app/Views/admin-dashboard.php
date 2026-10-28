@@ -7,6 +7,7 @@
  * @var array       $categories
  * @var string|null $error    Message si le formulaire d'ajout est invalide
  * @var bool        $added    true après l'ajout d'un plat
+ * @var bool        $updated  true après la modification d'un plat
  * @var bool        $deleted  true après la suppression d'un plat
  */
 
@@ -23,6 +24,10 @@ use App\Core\View;
 
 <?php if ($added): ?>
     <p class="message">Le plat a été ajouté.</p>
+<?php endif; ?>
+
+<?php if ($updated): ?>
+    <p class="message">Le plat a été modifié.</p>
 <?php endif; ?>
 
 <?php if ($deleted): ?>

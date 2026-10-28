@@ -187,6 +187,9 @@ old_price=$(sql "SELECT price FROM dishes WHERE id=2")
 req a POST /dashboard/plats/2/modifier --data-urlencode "token=$t" \
     --data "name=Le%20Jardin%20Fum%C3%A9&price=11.90"
 check "admin modifie le prix => enregistré en base (11.90)" [ "$(sql "SELECT price FROM dishes WHERE id=2")" = 11.90 ]
+check "… puis retour au tableau des plats (redirection vers /dashboard?updated=1)" [ "$LOC" = "/dashboard?updated=1" ]
+req a GET "$LOC"
+check "… avec le message « Le plat a été modifié. »" has 'Le plat a été modifié.'
 sql "UPDATE dishes SET price = $old_price WHERE id = 2" >/dev/null   # le nom n'a pas changé : seul le prix est restauré
 
 section "Prix : maximum 999,99 et 2 décimales"
@@ -205,6 +208,7 @@ edit_price 1e7
 check "prix 1e7 => refusé proprement (plus d'erreur PDO)" bash -c "grep -q 'Vérifie le nom et le prix' <<<\"\$0\" && ! grep -q SQLSTATE <<<\"\$0\"" "$BODY"
 edit_price 12.345
 check "prix 12.345 => arrondi à 12.35 en base" [ "$(sql "SELECT price FROM dishes WHERE id=3")" = 12.35 ]
+req a GET /dashboard/plats/3/modifier   # après l'enregistrement on revient au tableau : on rouvre le formulaire
 check "… et le formulaire affiche 12.35 (valeur réellement enregistrée)" has 'value="12.35"'
 check "champ prix limité à 999.99 côté navigateur" has 'max="999.99"'
 sql "UPDATE dishes SET price = $old_price WHERE id = 3" >/dev/null
