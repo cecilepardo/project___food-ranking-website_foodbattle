@@ -84,6 +84,31 @@ function current_page_attr(string $path): string
     return $currentPath === $path ? ' aria-current="page"' : '';
 }
 
+/**
+ * Attribut aria-current pour le lien d'une rubrique qui regroupe plusieurs pages
+ * (ex. « Dashboard » pour toute l'administration).
+ * - aria-current="page" sur la page du lien elle-même ;
+ * - aria-current="true" sur une autre page de la rubrique (adresse qui commence par un des préfixes) ;
+ * - rien ailleurs.
+ */
+function current_section_attr(string $path, array $prefixes): string
+{
+    $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+
+    if ($currentPath === $path) {
+        return ' aria-current="page"';
+    }
+
+    foreach ($prefixes as $prefix) {
+        // « /dashboard » ou « /dashboard/… », mais pas « /dashboardx »
+        if ($currentPath === $prefix || str_starts_with($currentPath, $prefix . '/')) {
+            return ' aria-current="true"';
+        }
+    }
+
+    return '';
+}
+
 function reject_invalid_utf8(mixed $value): void
 {
     if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {

@@ -35,7 +35,7 @@ $themeIcon  = Theme::isLight() ? 'icon--moon' : 'icon--sun';
             <a class="btn btn--secondary" href="/connexion">Connexion</a>
         <?php else: ?>
             <?php if (Auth::isAdmin()): ?>
-                <a class="site-header__link" href="/dashboard"<?= current_page_attr('/dashboard') ?>>Dashboard</a>
+                <a class="site-header__link" href="/dashboard"<?= current_section_attr('/dashboard', ['/dashboard', '/moderation']) ?>>Dashboard</a>
             <?php endif; ?>
 
             <?php /* Déconnexion en POST (voir AuthController::logout), à la place du bouton Connexion */ ?>
