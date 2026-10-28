@@ -35,7 +35,7 @@ class DishController extends Controller
         $price = is_float($price) ? round($price, 2) : $price;
 
         $isValid = $name !== ''
-            && strlen($name) <= 120
+            && mb_strlen($name) <= 120
             && $price !== false
             && $price !== null
             && $price >= 0
