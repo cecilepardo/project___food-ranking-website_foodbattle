@@ -15,6 +15,17 @@ bash tests/features.sh   # votes, avis, prix, encodage, et leurs interactions av
 Chaque ligne affiche ✅ (réussi), ❌ (échec) ou ⚠️ (constat connu, à corriger plus tard).
 Un script termine en erreur s'il y a au moins un ❌ : lancez-les avant chaque PR.
 
+## Comprendre un échec
+
+Pour garder la réponse du serveur de chaque test en échec (statut, en-têtes, page HTML) :
+
+```
+DUMP=/tmp/echecs bash tests/features.sh
+```
+
+Un fichier `echec-<horodatage>-<n>.txt` par échec. Pratique pour un échec qui ne se reproduit pas :
+une page 500 y montre l'erreur PHP (en local).
+
 ## Précautions
 
 - Ils **écrivent dans la base locale** : comptes `nouveau-…@test.fr`, votes, et vident `rate_limit_hits`.
