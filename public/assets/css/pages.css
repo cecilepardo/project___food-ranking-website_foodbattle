@@ -157,6 +157,64 @@
 }
 
 
+/* Pages d'erreur (403, 404, 429, 500…)
+   -------------------------------------------------------------------------- */
+
+.error-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 560px;
+    margin: var(--space-2xl) auto;
+    text-align: center;
+}
+
+/* Le code (404…) en très grand, couleur de la marque : c'est le repère visuel de la page */
+.error-page__code {
+    margin: 0;
+    color: var(--color-brand);
+    font-family: var(--font-display);
+    font-size: 6rem;
+    line-height: 1;
+}
+
+.error-page__message {
+    margin-bottom: var(--space-lg);
+    color: var(--color-text-muted);
+}
+
+/* Détail technique, affiché seulement en dev */
+.error-page__details {
+    max-width: 100%;
+    margin-top: var(--space-xl);
+    padding: var(--space-md);
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    font-size: var(--font-size-small);
+    text-align: left;
+    white-space: pre-wrap;
+}
+
+
+/* Mentions légales et données personnelles
+   -------------------------------------------------------------------------- */
+
+.legal {
+    max-width: 760px;
+}
+
+.legal h2 {
+    margin-top: var(--space-xl);
+}
+
+.legal__updated {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-small);
+}
+
+
 /* Mobile
    -------------------------------------------------------------------------- */
 
@@ -191,5 +249,9 @@
 
     .dish-detail__image {
         width: 100%;
+    }
+
+    .error-page__code {
+        font-size: 4rem;
     }
 }

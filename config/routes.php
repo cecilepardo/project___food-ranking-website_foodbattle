@@ -13,6 +13,7 @@ use App\Controllers\Admin\ModerationController;
 use App\Controllers\AuthController;
 use App\Controllers\DishController;
 use App\Controllers\HomeController;
+use App\Controllers\LegalController;
 use App\Controllers\RankingController;
 use App\Controllers\ThemeController;
 use App\Core\Router;
@@ -27,6 +28,7 @@ return function (Router $router): void {
     $router->get('/',           [HomeController::class, 'index']);       // ancien index.php
     $router->get('/classement', [RankingController::class, 'index']);    // ancien classement.php
     $router->get('/plat/{id}',  [DishController::class, 'show']);        // ancien plat.php
+    $router->get('/mentions-legales', [LegalController::class, 'index']);
 
     // Préférence d'affichage : ouverte à tous, connecté ou non (cookie, pas de compte nécessaire).
     $router->post('/theme', [ThemeController::class, 'toggle']);

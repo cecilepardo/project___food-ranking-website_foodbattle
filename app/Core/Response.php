@@ -28,12 +28,37 @@ class Response
             && !str_starts_with($url, '/\\');
     }
 
+    /** Titre de la page d'erreur selon le code HTTP. */
+    private const ERROR_TITLES = [
+        400 => 'Requête invalide',
+        403 => 'Accès refusé',
+        404 => 'Page introuvable',
+        405 => 'Action impossible',
+        422 => 'Saisie invalide',
+        429 => 'Trop de tentatives',
+        500 => 'Erreur du serveur',
+    ];
+
     /**
-     * Arrête la requête avec un simple message texte (comportement de l'ancien code).
+     * Arrête la requête et affiche la page d'erreur du site (avec en-tête et pied de page).
      */
     public static function abort(int $statusCode, string $message): never
     {
         http_response_code($statusCode);
-        exit($message);
+        echo self::errorPage($statusCode, $message);
+        exit;
+    }
+
+    /**
+     * HTML de la page d'erreur. $details (trace technique) n'est passé qu'en dev.
+     */
+    public static function errorPage(int $statusCode, string $message, ?string $details = null): string
+    {
+        return View::render('error', [
+            'title'   => self::ERROR_TITLES[$statusCode] ?? 'Erreur',
+            'code'    => $statusCode,
+            'message' => $message,
+            'details' => $details,
+        ]);
     }
 }

@@ -7,6 +7,7 @@
 
 declare(strict_types=1);
 
+use App\Core\ErrorHandler;
 use App\Core\Router;
 
 define('APP_ROOT', dirname(__DIR__));
@@ -33,6 +34,9 @@ $config = require APP_ROOT . '/config/config.php';
 // En production, une erreur ne doit jamais montrer au visiteur des chemins ou du code.
 // Elle reste visible dans les logs : docker compose logs app
 ini_set('display_errors', $config['env'] === 'dev' ? '1' : '0');
+
+// Erreur non prévue => page 500 du site (avec le détail technique en dev seulement).
+ErrorHandler::register($config['env'] === 'dev');
 
 // Interdit d'afficher le site dans une <iframe> d'un autre site (clickjacking sur les boutons admin),
 // et empêche le navigateur de deviner un autre type de contenu que celui annoncé.

@@ -114,6 +114,11 @@
     font-weight: var(--font-weight-bold);
 }
 
+.site-footer__link {
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-bold);
+}
+
 
 /* Mobile
    -------------------------------------------------------------------------- */

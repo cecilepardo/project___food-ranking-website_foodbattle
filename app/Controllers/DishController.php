@@ -33,8 +33,7 @@ class DishController extends Controller
         $dish = Dish::findWithEstablishment($id);
 
         if ($dish === null) {
-            $this->render('error-dish-not-found', ['title' => 'Le plat'], 404);
-            return;
+            $this->abort(404, "Ce plat n'existe pas ou a été supprimé.");
         }
 
         $this->render('dish', [

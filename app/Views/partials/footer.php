@@ -3,4 +3,5 @@
     <small class="site-footer__note">
         Prototype pédagogique local · établissements, avis et données fictifs · photographies d’illustration
     </small>
+    <a class="site-footer__link" href="/mentions-legales">Mentions légales et données personnelles</a>
 </footer>
