@@ -31,11 +31,13 @@ class RateLimiter
 
     /**
      * Enregistre une tentative pour cette clé, et supprime au passage les tentatives périmées.
+     * Renvoie l'id de la tentative (voir forget()).
      */
-    public static function hit(string $key): void
+    public static function hit(string $key): int
     {
         RateLimitHit::deleteOlderThan(self::RETENTION_SECONDS);
-        RateLimitHit::create($key);
+
+        return RateLimitHit::create($key);
     }
 
     /**
@@ -52,5 +54,14 @@ class RateLimiter
     public static function clear(string $key): void
     {
         RateLimitHit::deleteForKey($key);
+    }
+
+    /**
+     * Retire des tentatives précises (par id), ex. celles d'une connexion réussie.
+     * Contrairement à clear(), les autres tentatives de la clé restent comptées.
+     */
+    public static function forget(array $hitIds): void
+    {
+        RateLimitHit::deleteIds($hitIds);
     }
 }

@@ -14,10 +14,15 @@ use App\Core\Database;
  */
 class RateLimitHit
 {
-    public static function create(string $key): void
+    /**
+     * Enregistre une tentative et renvoie son id (pour pouvoir la retirer ensuite, voir deleteIds()).
+     */
+    public static function create(string $key): int
     {
-        $statement = Database::get()->prepare('INSERT INTO rate_limit_hits (key) VALUES (?)');
+        $statement = Database::get()->prepare('INSERT INTO rate_limit_hits (key) VALUES (?) RETURNING id');
         $statement->execute([$key]);
+
+        return (int) $statement->fetchColumn();
     }
 
     /**
@@ -54,6 +59,16 @@ class RateLimitHit
     {
         $statement = Database::get()->prepare('DELETE FROM rate_limit_hits WHERE key = ?');
         $statement->execute([$key]);
+    }
+
+    public static function deleteIds(array $ids): void
+    {
+        if ($ids === []) {
+            return;
+        }
+        $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+        $statement = Database::get()->prepare("DELETE FROM rate_limit_hits WHERE id IN ($placeholders)");
+        $statement->execute(array_values($ids));
     }
 
     /**

@@ -17,6 +17,14 @@ class ThrottleAuth implements Middleware
     private const MAX_ATTEMPTS   = 20;
     private const WINDOW_SECONDS = 900; // 15 minutes
 
+    /** Tentative enregistrée pour la requête en cours (null si la route n'est pas limitée). */
+    private static ?int $currentHitId = null;
+
+    public static function currentHitId(): ?int
+    {
+        return self::$currentHitId;
+    }
+
     public function handle(): void
     {
         // REMOTE_ADDR est l'adresse vue par le serveur. On ne lit jamais X-Forwarded-For :
@@ -32,6 +40,6 @@ class ThrottleAuth implements Middleware
             Response::abort(429, "Trop de tentatives de connexion. Réessaie dans $minutes minute(s).");
         }
 
-        RateLimiter::hit($key);
+        self::$currentHitId = RateLimiter::hit($key);
     }
 }

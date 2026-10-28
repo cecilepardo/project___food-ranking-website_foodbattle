@@ -8,6 +8,7 @@ use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\RateLimiter;
 use App\Core\Validator;
+use App\Middlewares\ThrottleAuth;
 use App\Models\User;
 
 /**
@@ -53,6 +54,9 @@ class AuthController extends Controller
             return;
         }
 
+        // Tentative de l'étape 1 : remboursée si la connexion réussit pour CET email (voir forgiveSuccessfulAttempt)
+        $_SESSION['auth_step1'] = ['email' => $email, 'hit' => ThrottleAuth::currentHitId()];
+
         if (User::emailExists($email)) {
             $this->showPasswordForm($email);
             return;
@@ -97,6 +101,7 @@ class AuthController extends Controller
 
         // Connexion réussie : les échecs précédents ne comptent plus.
         RateLimiter::clear($throttleKey);
+        $this->forgiveSuccessfulAttempt($email);
         Auth::login($user);
 
         $this->redirectAfterLogin();
@@ -122,6 +127,7 @@ class AuthController extends Controller
         }
 
         $userId = User::create($email, $nickname, Auth::hashPassword($password));
+        $this->forgiveSuccessfulAttempt($email);
 
         // Connexion directe après l'inscription : le compte vient d'être créé avec le rôle par défaut.
         Auth::login(['id' => $userId, 'nickname' => $nickname, 'role' => 'user']);
@@ -139,6 +145,24 @@ class AuthController extends Controller
         Auth::logout();
 
         $this->redirect('/');
+    }
+
+    /**
+     * Une connexion (ou inscription) réussie ne compte pas dans la limite par IP.
+     * On retire uniquement sa propre tentative et celle de l'étape 1 pour le même email :
+     * se connecter à son compte ne peut pas effacer des essais faits sur d'autres emails.
+     */
+    private function forgiveSuccessfulAttempt(string $email): void
+    {
+        $hitIds = [ThrottleAuth::currentHitId()];
+
+        $step1 = $_SESSION['auth_step1'] ?? null;
+        if (is_array($step1) && ($step1['email'] ?? null) === $email) {
+            $hitIds[] = $step1['hit'] ?? null;
+        }
+        unset($_SESSION['auth_step1']);
+
+        RateLimiter::forget(array_filter($hitIds, 'is_int'));
     }
 
     /**
