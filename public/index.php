@@ -43,8 +43,8 @@ ErrorHandler::register($config['env'] === 'dev');
 header('X-Frame-Options: DENY');
 header('X-Content-Type-Options: nosniff');
 // Politique de sécurité du contenu : le navigateur ne charge que nos propres fichiers
-// (plus les photos d'illustration de Pexels). Un script injecté malgré l'échappement ne s'exécuterait pas.
-header("Content-Security-Policy: default-src 'self'; img-src 'self' https://images.pexels.com; "
+// (photos comprises). Un script injecté malgré l'échappement ne s'exécuterait pas.
+header("Content-Security-Policy: default-src 'self'; "
     . "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
 // Les autres sites ne voient pas d'où viennent nos visiteurs (ex. /dashboard/plats/3/modifier).
 header('Referrer-Policy: same-origin');

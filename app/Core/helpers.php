@@ -51,18 +51,19 @@ function field_attrs(bool $isInvalid, string $hintId = ''): string
 }
 
 /**
- * Photo d'illustration selon la catégorie du plat.
+ * Photo d'illustration d'un plat (Foodiesfeed, licence CC0), servie depuis public/assets/img/plats/.
+ * Chaque plat de démonstration a sa photo ({id}.webp) ; un plat ajouté ensuite prend celle de sa catégorie.
  */
-function image_for(string $category): string
+function image_for(array $dish): string
 {
-    $photoIds = [
-        'burger' => '1639557',
-        'tacos'  => '4958792',
-        'pizza'  => '315755',
-    ];
-    $id = $photoIds[$category] ?? $photoIds['burger'];
+    $ownPhoto = '/assets/img/plats/' . (int) $dish['id'] . '.webp';
+    if (is_file(APP_ROOT . '/public' . $ownPhoto)) {
+        return $ownPhoto;
+    }
 
-    return "https://images.pexels.com/photos/{$id}/pexels-photo-{$id}.jpeg?auto=compress&cs=tinysrgb&w=800";
+    $category = isset(\App\Models\Dish::CATEGORIES[$dish['category']]) ? $dish['category'] : 'burger';
+
+    return '/assets/img/plats/' . $category . '.webp';
 }
 
 /**

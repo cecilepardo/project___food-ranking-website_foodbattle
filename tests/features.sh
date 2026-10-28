@@ -515,7 +515,7 @@ done
 
 section "Sécurité : CSP, Referrer-Policy, jeton CSRF renouvelé, rôle admin relu en base"
 csp_headers() {
-    grep -qi "^content-security-policy: default-src 'self'; img-src 'self' https://images.pexels.com; object-src 'none'" "$DIR/headers" \
+    grep -qi "^content-security-policy: default-src 'self'; object-src 'none'" "$DIR/headers" \
         && grep -qi '^referrer-policy: same-origin' "$DIR/headers"
 }
 req csp GET /
@@ -599,7 +599,22 @@ check "ajout d'un plat au nom de 121 caractères => refusé" has 'Vérifie les c
 req pb GET "/dashboard/plats/$PB/modifier"; t=$(token)
 req pb POST "/dashboard/plats/$PB/modifier" --data-urlencode "token=$t" --data "name=${E61}+bis+$RUN" --data price=6
 check "modification avec un nom de 76 caractères accentués => acceptée" [ "$(sql "SELECT char_length(name) FROM dishes WHERE id=$PB")" = $((61 + 5 + ${#RUN})) ]
+
+section "Photos des plats (servies par le site)"
+req ph GET "/plat/$PB"
+check "plat ajouté sans photo => photo de sa catégorie (burger.webp)" has 'src="/assets/img/plats/burger.webp"'
 sql "DELETE FROM dishes WHERE name LIKE '%$RUN'" >/dev/null
+req ph GET /
+check "accueil : chaque plat de démo a sa propre photo (12 photos différentes)" \
+    [ "$(grep -oE 'src="/assets/img/plats/[0-9]+\.webp"' <<<"$BODY" | sort -u | wc -l)" = 12 ]
+check "… aucune image chargée depuis un site extérieur" hasnt 'src="https://'
+req ph GET /plat/5
+check "fiche plat : photo du plat (5.webp)" has 'src="/assets/img/plats/5.webp"'
+missing=0
+for f in burger tacos pizza {1..12}; do
+    [ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/assets/img/plats/$f.webp")" = 200 ] || missing=$((missing + 1))
+done
+check "les 15 fichiers photo répondent 200" [ "$missing" = 0 ]
 
 section "Bouton thème : retour vers une page qui existe"
 req th GET "/classement"
