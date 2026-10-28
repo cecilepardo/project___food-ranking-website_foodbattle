@@ -238,6 +238,43 @@ check "message « Le plat a été supprimé. » affiché" has 'Le plat a été s
 req a POST "/dashboard/plats/999999/supprimer" --data-urlencode "token=$t"
 check "plat inexistant => 404" [ "$CODE" = 404 ]
 
+section "Tri du tableau du dashboard (admin)"
+# Noms des plats dans l'ordre d'affichage du tableau
+dish_order() { grep -o 'data-label="Plat">[^<]*' <<<"$BODY" | sed 's/.*>//'; }
+# Vrai si les plats donnés sont affichés dans cet ordre (in_order A B C : A avant B, B avant C)
+in_order() {
+    local list previous=0 line name
+    list=$(dish_order)
+    for name in "$@"; do
+        line=$(grep -nxF "$name" <<<"$list" | cut -d: -f1)
+        [ -n "$line" ] && [ "$line" -gt "$previous" ] || return 1
+        previous=$line
+    done
+}
+req a GET '/dashboard?tri=prix&ordre=asc'
+# Plats choisis pour que l'ordre attendu contredise l'ordre d'ajout (id) : le test échoue si le tri est ignoré
+check "tri prix croissant => 8,90 € / 10,50 € / 12,50 € / 14 €" in_order 'Le Veggie Tempo' 'Le Classique' 'Le Double Smash' 'La Quatre Fromages'
+check "… colonne Prix marquée aria-sort=\"ascending\"" has 'aria-sort="ascending"'
+check "… le lien Prix inverse l'ordre" has 'href="/dashboard?tri=prix&amp;ordre=desc"'
+req a GET '/dashboard?tri=prix&ordre=desc'
+check "tri prix décroissant => ordre inversé" in_order 'La Quatre Fromages' 'Le Veggie Tempo'
+check "… colonne Prix marquée aria-sort=\"descending\"" has 'aria-sort="descending"'
+req a GET '/dashboard?tri=lieu&ordre=asc'
+check "tri par lieu => Lille (Le Comptoir Smash, Pizza Minuit, Taco Tempo), puis Roubaix, puis Tourcoing" \
+    in_order 'Le Double Smash' 'La Minuit' 'Le Poulet Crunch' 'Le Nordiste' 'Le Trois Sauces'
+req a GET '/dashboard?tri=lieu&ordre=desc'
+check "tri par lieu décroissant => Tourcoing avant Lille" in_order 'Le Trois Sauces' 'Le Double Smash'
+req a GET '/dashboard?tri=categorie&ordre=asc'
+check "tri par catégorie => burgers, puis pizzas, puis tacos" in_order 'Le Classique' 'La Minuit' 'Le Poulet Crunch'
+check "… colonnes Ville et Catégorie affichées" \
+    bash -c 'grep -q "data-label=\"Ville\">Lille<" <<<"$1" && grep -q "data-label=\"Catégorie\">Pizzas<" <<<"$1"' _ "$BODY"
+req a GET "/dashboard?tri=n'importe+quoi&ordre=desc"
+check "tri inconnu => 200 et ordre par défaut (Le Double Smash en premier)" \
+    [ "$CODE" = 200 -a "$(dish_order | head -1)" = 'Le Double Smash' ]
+check "… aucune colonne marquée comme triée" hasnt 'aria-sort'
+req a GET '/dashboard?tri[]=prix&ordre[]=desc'
+check "tri[]=… => 200, ordre par défaut" [ "$CODE" = 200 -a "$(dish_order | head -1)" = 'Le Double Smash' ]
+
 section "Ajout d'un établissement (admin)"
 add_establishment() {  # add_establishment JAR NOM VILLE ADRESSE (déjà encodés pour l'URL)
     req "$1" GET /dashboard/etablissements; local t; t=$(token)

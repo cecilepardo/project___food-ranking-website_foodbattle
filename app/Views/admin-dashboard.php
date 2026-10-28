@@ -5,6 +5,8 @@
  * @var array       $dishes
  * @var array       $establishments  Pour le menu déroulant du formulaire d'ajout
  * @var array       $categories
+ * @var string      $sort        Tri du tableau ('' = ordre d'ajout, voir Dish::SORTS)
+ * @var bool        $descending  true = ordre décroissant
  * @var string|null $error    Message si le formulaire d'ajout est invalide
  * @var bool        $added    true après l'ajout d'un plat
  * @var bool        $updated  true après la modification d'un plat
@@ -35,12 +37,14 @@ use App\Core\View;
 <?php endif; ?>
 
 
-<table class="table table--cards">
+<table class="table table--cards table--sortable">
     <thead>
         <tr>
             <th>Plat</th>
+            <?= View::partial('sort-header', ['key' => 'lieu', 'label' => 'Ville', 'sort' => $sort, 'descending' => $descending]) ?>
             <th>Établissement</th>
-            <th>Prix</th>
+            <?= View::partial('sort-header', ['key' => 'categorie', 'label' => 'Catégorie', 'sort' => $sort, 'descending' => $descending]) ?>
+            <?= View::partial('sort-header', ['key' => 'prix', 'label' => 'Prix', 'sort' => $sort, 'descending' => $descending]) ?>
             <th class="table__cell--center">Actions</th>
         </tr>
     </thead>
@@ -48,7 +52,9 @@ use App\Core\View;
         <?php foreach ($dishes as $dish): ?>
             <tr>
                 <td data-label="Plat"><?= e($dish['name']) ?></td>
+                <td data-label="Ville"><?= e($dish['city']) ?></td>
                 <td data-label="Établissement"><?= e($dish['restaurant']) ?></td>
+                <td data-label="Catégorie"><?= e($categories[$dish['category']] ?? $dish['category']) ?></td>
                 <td data-label="Prix"><?= euro($dish['price']) ?></td>
                 <td>
                     <div class="table__actions">
