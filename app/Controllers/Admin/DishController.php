@@ -33,17 +33,9 @@ class DishController extends Controller
         $this->checkCsrf();
 
         $name  = trim($this->postString('name'));
-        $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT);
-        $price = is_float($price) ? round($price, 2) : $price;
+        $price = $this->postPrice();
 
-        $isValid = mb_strlen($name) <= 120
-            && Validator::isCleanText($name) // au moins un caractère visible, rien d'invisible
-            && $price !== false
-            && $price !== null
-            && $price >= 0
-            && $price <= Dish::MAX_PRICE;
-
-        if (!$isValid) {
+        if (!Validator::isDishName($name) || !Validator::isPrice($price)) {
             $this->showForm($dish, error: 'Vérifie le nom et le prix.');
             return;
         }

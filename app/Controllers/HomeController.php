@@ -20,7 +20,8 @@ class HomeController extends Controller
         $search   = mb_substr(trim($this->queryString('q')), 0, self::SEARCH_MAX_LENGTH);
         $category = $this->queryString('categorie');
 
-        $dishes = Dish::search($search, $this->categoryFilter($category));
+        // Catégorie inconnue => pas de filtre ('')
+        $dishes = Dish::search($search, array_key_exists($category, Dish::CATEGORIES) ? $category : '');
 
         $this->render('home', [
             'title'      => 'Découvrir',
@@ -29,17 +30,5 @@ class HomeController extends Controller
             'categories' => Dish::CATEGORIES,
             'dishes'     => $dishes,
         ]);
-    }
-
-    /**
-     * Catégorie réellement envoyée à la requête SQL ('' = pas de filtre).
-     */
-    private function categoryFilter(string $category): string
-    {
-        if (!array_key_exists($category, Dish::CATEGORIES)) {
-            return '';
-        }
-
-        return $category;
     }
 }

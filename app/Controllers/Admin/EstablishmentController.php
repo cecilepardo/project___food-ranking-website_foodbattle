@@ -57,10 +57,8 @@ class EstablishmentController extends Controller
      */
     private function isValidEstablishment(string $name, string $city, string $address): bool
     {
-        $nameIsValid    = mb_strlen($name) <= 120 && Validator::isCleanText($name);
-        $cityIsValid    = mb_strlen($city) <= 80 && Validator::isCleanText($city);
-        $addressIsValid = mb_strlen($address) <= 255 && Validator::isCleanText($address);
-
-        return $nameIsValid && $cityIsValid && $addressIsValid;
+        return Validator::isCleanText($name, 120)
+            && Validator::isCleanText($city, 80)
+            && Validator::isCleanText($address, 255);
     }
 }

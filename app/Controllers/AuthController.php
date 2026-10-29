@@ -30,6 +30,8 @@ class AuthController extends Controller
     private const LOGIN_MAX_FAILURES   = 5;
     private const LOGIN_WINDOW_SECONDS = 900; // 15 minutes
 
+    private const INVALID_EMAIL = 'Saisis une adresse email valide.';
+
     /**
      * GET /connexion
      * Étape 1 : saisie de l'email.
@@ -50,7 +52,7 @@ class AuthController extends Controller
         $email = $this->normalizeEmail($this->postString('email'));
 
         if (!$this->isValidEmail($email)) {
-            $this->showEmailForm($email, 'Saisis une adresse email valide.');
+            $this->showEmailForm($email, self::INVALID_EMAIL);
             return;
         }
 
@@ -78,7 +80,7 @@ class AuthController extends Controller
 
         // L'email vient d'un champ caché : on le valide avant de s'en servir comme clé de comptage.
         if (!$this->isValidEmail($email)) {
-            $this->showEmailForm($email, 'Saisis une adresse email valide.');
+            $this->showEmailForm($email, self::INVALID_EMAIL);
             return;
         }
 
@@ -191,7 +193,7 @@ class AuthController extends Controller
     private function registrationError(string $email, string $nickname, string $password): ?array
     {
         if (!$this->isValidEmail($email)) {
-            return ['field' => null, 'message' => 'Saisis une adresse email valide.'];
+            return ['field' => null, 'message' => self::INVALID_EMAIL];
         }
         if (!Validator::isNickname($nickname)) {
             return ['field' => 'nickname', 'message' => 'Pseudo invalide : 3 à 30 caractères, lettres, chiffres, espaces, « . », « - » ou « _ ».'];

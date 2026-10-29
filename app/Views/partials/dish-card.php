@@ -5,10 +5,6 @@
  * @var array $dish
  */
 $dishUrl = '/plat/' . (int) $dish['id'];
-$votes   = (int) $dish['votes'];
-
-// "4,6/5" ou "—" si personne n'a encore noté le plat
-$rating = $dish['average'] ? score($dish['average']) . '/5' : '—';
 ?>
 <article class="card">
     <img
@@ -33,7 +29,7 @@ $rating = $dish['average'] ? score($dish['average']) . '/5' : '—';
             <span class="card__rating">
                 <!-- L'étoile est décorative : un lecteur d'écran lirait "étoile noire" -->
                 <span aria-hidden="true">★</span>
-                <?= e($rating) ?> · <?= $votes ?> <?= $votes > 1 ? 'votes' : 'vote' ?>
+                <?= e(rating_summary($dish)) ?>
             </span>
         </p>
 

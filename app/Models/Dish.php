@@ -23,20 +23,23 @@ class Dish
     /** Tris possibles du tableau du dashboard (valeur de ?tri=…). */
     public const SORTS = ['lieu', 'prix', 'categorie'];
 
+    /** Colonnes calculées d'un plat « d » : note moyenne (avis publiés seulement) et nombre de votes. */
+    private const STATS_COLUMNS = "(SELECT AVG(score) FROM ratings WHERE dish_id = d.id AND status = 'published') AS average,
+                                   (SELECT COUNT(*)   FROM votes   WHERE dish_id = d.id) AS votes";
+
     /**
      * Plats de la carte, avec leur restaurant, leur note moyenne et leur nombre de votes.
      * Filtres optionnels : texte recherché (nom du plat ou de l'établissement) et catégorie.
      */
     public static function search(string $search = '', string $category = ''): array
     {
-        $sql = "SELECT d.*,
+        $sql = 'SELECT d.*,
                        e.name AS restaurant,
                        e.city,
-                       (SELECT AVG(score) FROM ratings WHERE dish_id = d.id AND status = 'published') AS average,
-                       (SELECT COUNT(*)   FROM votes   WHERE dish_id = d.id) AS votes
+                       ' . self::STATS_COLUMNS . '
                 FROM dishes d
                 JOIN establishments e ON e.id = d.establishment_id
-                WHERE 1 = 1";
+                WHERE 1 = 1';
         $params = [];
 
         if ($search !== '') {
@@ -71,8 +74,7 @@ class Dish
                     e.name AS restaurant,
                     e.city,
                     e.address,
-                    (SELECT AVG(score) FROM ratings WHERE dish_id = d.id AND status = \'published\') AS average,
-                    (SELECT COUNT(*)   FROM votes   WHERE dish_id = d.id) AS votes
+                    ' . self::STATS_COLUMNS . '
              FROM dishes d
              JOIN establishments e ON e.id = d.establishment_id
              WHERE d.id = ?'
@@ -109,8 +111,7 @@ class Dish
                     d.name,
                     d.category,
                     e.name AS restaurant,
-                    (SELECT COUNT(*)   FROM votes   WHERE dish_id = d.id) AS votes,
-                    (SELECT AVG(score) FROM ratings WHERE dish_id = d.id AND status = \'published\') AS average
+                    ' . self::STATS_COLUMNS . '
              FROM dishes d
              JOIN establishments e ON e.id = d.establishment_id
              ORDER BY average DESC NULLS LAST, votes DESC, d.id

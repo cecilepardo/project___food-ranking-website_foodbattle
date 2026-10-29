@@ -31,6 +31,18 @@ function score(float|string|null $average): string
 }
 
 /**
+ * Note et votes d'un plat : "4,6/5 · 3 votes", ou "— · 1 vote" si personne ne l'a encore noté.
+ * En français, 0 et 1 sont au singulier.
+ */
+function rating_summary(array $dish): string
+{
+    $votes  = (int) $dish['votes'];
+    $rating = $dish['average'] ? score($dish['average']) . '/5' : '—';
+
+    return $rating . ' · ' . $votes . ' ' . ($votes > 1 ? 'votes' : 'vote');
+}
+
+/**
  * Champ caché contenant le jeton CSRF, à placer dans chaque formulaire POST.
  */
 function csrf_field(): string
@@ -85,9 +97,7 @@ function logo_url(): string
  */
 function current_page_attr(string $path): string
 {
-    $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-
-    return $currentPath === $path ? ' aria-current="page"' : '';
+    return current_section_attr($path, []);
 }
 
 /**

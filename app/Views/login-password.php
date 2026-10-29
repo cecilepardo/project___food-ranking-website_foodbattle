@@ -28,13 +28,7 @@
         <label for="password">Mot de passe</label>
         <div class="password-field">
             <input id="password" class="password-field__input" name="password" type="password" autocomplete="current-password" required autofocus<?= field_attrs($invalid) ?>>
-
-            <?php /* Caché sans JavaScript : app.js l'affiche et le fait fonctionner. */ ?>
-            <button class="password-field__toggle" type="button" aria-controls="password" aria-pressed="false" data-password-toggle hidden>
-                <span class="icon icon--eye" aria-hidden="true"></span>
-                <span class="icon icon--eye-closed" aria-hidden="true"></span>
-                <span class="visually-hidden">Afficher le mot de passe</span>
-            </button>
+            <?= \App\Core\View::partial('password-toggle') ?>
         </div>
     </div>
 
