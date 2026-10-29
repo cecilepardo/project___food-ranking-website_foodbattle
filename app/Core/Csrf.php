@@ -21,4 +21,13 @@ class Csrf
     {
         return hash_equals(self::token(), $token);
     }
+
+    /**
+     * Oublie le jeton actuel : le prochain formulaire en recevra un nouveau.
+     * Appelé à la connexion, pour qu'un jeton obtenu avant ne serve plus ensuite.
+     */
+    public static function regenerate(): void
+    {
+        unset($_SESSION['token']);
+    }
 }
