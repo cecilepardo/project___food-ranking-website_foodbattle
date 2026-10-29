@@ -13,11 +13,12 @@ accessible au public. Il sépare **ce qui est déjà prêt** de **ce qui reste �
 | Mode d'erreur | `APP_ENV=dev` : détail de l'erreur sur la page | `APP_ENV=prod` : page 500 sans détail, trace dans les logs | Un chemin de fichier ou une requête SQL aide un attaquant |
 | `php.ini` | Absent : valeurs par défaut de PHP (`display_errors` actif) | `php.ini-production` | Une erreur survenue avant `index.php` ne doit rien afficher non plus |
 | Code | Monté depuis le poste (modifiable à chaud) | Copié dans l'image | Le code en ligne est exactement celui qui a été construit et testé |
-| Cache PHP (OPcache) | Relit les fichiers à chaque requête (PR #44) | Ne relit jamais (le code ne change pas dans l'image) | Plus rapide ; un changement de code passe par une nouvelle image |
+| Cache PHP (OPcache) | Relit les fichiers à chaque requête | Ne relit jamais (le code ne change pas dans l'image) | Plus rapide ; un changement de code passe par une nouvelle image |
 | Secrets | En clair dans `compose.yaml` (`foodbattle_local`) | Fichier `.env.prod` hors Git, démarrage refusé s'il manque | Un secret versionné n'est plus secret |
 | Comptes | Comptes de démo aux mots de passe publics | Aucun compte connu ; premier admin créé à l'installation | Les mots de passe de démo sont écrits dans le README |
 | HTTPS | Non (http://localhost) | Oui, via un proxy (Caddy, Nginx…) | Mots de passe et cookie de session chiffrés sur le réseau |
 | Adresse des visiteurs | Celle de la passerelle Docker | La vraie IP, transmise par le proxy | Sinon la limite de 20 tentatives par IP bloque tout le monde à la fois |
+| Photos envoyées depuis le dashboard (#47) | Dans `public/uploads/` du poste | Dans un volume Docker dédié, sauvegardé | Sinon elles disparaissent à chaque reconstruction de l'image |
 | Redémarrage | Manuel | Automatique (`restart: unless-stopped`) | Le site revient seul après un redémarrage du serveur |
 
 ## 2. Déjà prêt
@@ -27,11 +28,13 @@ Ces protections sont actives dans le code et n'ont rien à changer pour la produ
 - Apache ne sert que `public/` : `app/`, `config/`, `database/` et `tests/` sont inaccessibles depuis le navigateur.
 - Versions d'Apache et de PHP masquées (`ServerTokens Prod`, `expose_php = Off`).
 - En-têtes `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
-  `Content-Security-Policy` et `Referrer-Policy` (PR #45).
+  `Content-Security-Policy` (nos propres fichiers uniquement, photos comprises) et `Referrer-Policy`.
 - Page 500 sans détail technique dès que `APP_ENV` vaut autre chose que `dev`
   (et `prod` est la valeur par défaut si la variable manque).
 - Cookie de session `HttpOnly`, `SameSite=Lax`, mode strict, identifiant renouvelé à la connexion.
-- Jeton CSRF sur tous les formulaires, renouvelé à la connexion (PR #45).
+- Jeton CSRF sur tous les formulaires, renouvelé à la connexion.
+- Rôle admin relu en base à chaque page d'administration.
+- Photos des plats hébergées sur le site : aucun service extérieur.
 - Limitation des tentatives de connexion (par IP et par compte).
 - Le site n'écoute que sur `127.0.0.1` : il n'est joignable qu'à travers le proxy de la machine.
 - La base n'a aucun port ouvert hors de Docker.
@@ -62,7 +65,10 @@ services:
       DB_NAME: ${DB_NAME:?DB_NAME manquant dans .env.prod}
       DB_USER: ${DB_USER:?DB_USER manquant dans .env.prod}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD manquant dans .env.prod}
-    # Pas de "volumes:" : le code est celui copié dans l'image
+    volumes:
+      # Seul dossier modifiable : les photos envoyées depuis le dashboard (#47).
+      # Le reste du code est celui copié dans l'image.
+      - foodbattle_uploads:/var/www/html/public/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -85,6 +91,7 @@ services:
 
 volumes:
   foodbattle_prod_data:
+  foodbattle_uploads:
 ```
 
 `${VAR:?message}` fait **échouer le démarrage** si la variable manque, au lieu de lancer le site avec une valeur vide.
@@ -150,7 +157,7 @@ La production démarre avec une base vide ; l'admin crée établissements et pla
      psql -U foodbattle -c "UPDATE users SET role = 'admin' WHERE email = 'admin@exemple.fr';"
    ```
 3. se reconnecter pour voir apparaître le lien « Dashboard » dans l'en-tête
-   (l'accès aux pages admin, lui, est vérifié en base dès la requête suivante, PR #45).
+   (l'accès aux pages admin, lui, est vérifié en base dès la requête suivante).
 
 ### 3.4 Une image Docker locale ou de production
 
@@ -167,7 +174,7 @@ RUN if [ "$APP_ENV" = "prod" ]; then \
         cp "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"; \
     fi
 
-# Cache PHP : en dev, un fichier modifié est relu tout de suite (PR #44) ;
+# Cache PHP : en dev, un fichier modifié est relu tout de suite ;
 # en production, le code ne change pas dans l'image : inutile de vérifier les fichiers.
 RUN if [ "$APP_ENV" = "prod" ]; then \
         echo 'opcache.validate_timestamps = 0' > /usr/local/etc/php/conf.d/opcache.ini; \
@@ -176,6 +183,7 @@ RUN if [ "$APP_ENV" = "prod" ]; then \
     fi
 ```
 
+Ce bloc remplace la ligne `opcache-dev.ini` actuelle du `Dockerfile`.
 Conséquence en production : toute modification du code passe par `--build` (voir § 5).
 
 ### 3.5 HTTPS
@@ -229,7 +237,29 @@ RUN if [ "$APP_ENV" = "prod" ]; then \
 par la passerelle Docker. À ajuster si le proxy est ailleurs. Le code PHP (`ThrottleAuth`) n'a pas à changer :
 il lit `REMOTE_ADDR`, que le module remplace.
 
-### 3.7 Logs
+### 3.7 Photos envoyées depuis le dashboard (#47)
+
+L'admin peut joindre une photo à un plat ; elle est enregistrée dans `public/uploads/plats/`.
+
+- **Volume dédié** (voir 3.1) : sans lui, le dossier fait partie de l'image et les photos
+  sont **perdues à chaque mise à jour** (`--build`).
+- **Droits d'écriture** : Apache (utilisateur `www-data`) doit pouvoir écrire dans le dossier.
+  Un volume neuf appartient à `root` ; à créer dans l'image avec le bon propriétaire :
+  ```dockerfile
+  RUN mkdir -p /var/www/html/public/uploads/plats \
+      && chown -R www-data:www-data /var/www/html/public/uploads
+  ```
+  (Docker recopie ce propriétaire dans le volume à sa création.)
+- **Aucun script exécuté dans ce dossier** : le site renomme déjà chaque fichier
+  (`{id}.jpg|png|webp`) après avoir vérifié son contenu. Par précaution, si un bug contournait ce contrôle,
+  Apache refuse en plus d'exécuter du PHP à cet endroit :
+  ```dockerfile
+  RUN printf '<Directory /var/www/html/public/uploads>\n    php_admin_flag engine off\n</Directory>\n' \
+      > /etc/apache2/conf-enabled/uploads.conf
+  ```
+- **Sauvegarde** : les photos ne sont pas dans la base ; elles se sauvegardent à part (§ 6).
+
+### 3.8 Logs
 
 Les erreurs PHP et les accès Apache partent dans la sortie du conteneur :
 `docker compose -f compose.prod.yaml logs -f app`.
@@ -305,6 +335,16 @@ docker compose -f compose.prod.yaml --env-file .env.prod exec -T db \
   pg_restore -U foodbattle -d foodbattle --clean --if-exists < foodbattle-2026-11-02.dump
 ```
 
+**Photos envoyées** (#47), qui ne sont pas dans la base :
+
+```bash
+docker run --rm -v foodbattle_uploads:/uploads -v /opt/sauvegardes:/backup alpine \
+  tar czf /backup/uploads-$(date +%F).tar.gz -C /uploads .
+```
+
+Restauration : même commande avec `tar xzf /backup/uploads-<date>.tar.gz -C /uploads`.
+Le nom exact du volume est préfixé par le nom du projet : `docker volume ls` pour le vérifier.
+
 Une sauvegarde n'est fiable que si sa restauration a été testée : le faire au moins une fois,
 sur une installation locale.
 
@@ -321,7 +361,9 @@ sur une installation locale.
 - [ ] `/config/config.php`, `/database/init.sql`, `/.env.prod` répondent 404
 - [ ] La base n'est pas joignable depuis l'extérieur (aucun port 5432 ouvert)
 - [ ] Après 20 tentatives de connexion depuis une machine, une **autre** machine peut encore se connecter (vraie IP, § 3.6)
-- [ ] Une sauvegarde a été faite et restaurée avec succès
+- [ ] Une photo envoyée depuis le dashboard s'affiche, et survit à `up -d --build` (volume, § 3.7)
+- [ ] `/uploads/plats/` n'exécute pas de PHP (§ 3.7)
+- [ ] Une sauvegarde (base **et** photos) a été faite et restaurée avec succès
 
 ## 8. Limites connues
 
@@ -329,7 +371,7 @@ sur une installation locale.
 - **Un seul serveur** : les sessions sont des fichiers dans le conteneur `app`. Un redémarrage
   déconnecte les utilisateurs ; plusieurs serveurs demanderaient des sessions partagées (en base, par exemple).
 - **Pas d'envoi d'email** : pas de mot de passe oublié. Un admin peut remettre un mot de passe en base.
-- **Photos chargées depuis Pexels** : le site dépend d'un service extérieur pour les illustrations,
-  et Pexels voit l'adresse IP des visiteurs (à mentionner dans les mentions légales, ou héberger les images).
+- **Photos envoyées** (#47) : pas de redimensionnement ni de remplacement de la photo d'un plat existant
+  (la page Modifier ne gère que le nom et le prix).
 - **Énumération des emails** : l'étape 1 de la connexion indique si un email a un compte. Choix d'ergonomie
   (connexion et inscription dans un seul formulaire), limité par les 20 tentatives par IP.

@@ -88,7 +88,7 @@ bash tests/features.sh   # votes, avis, dashboard, sécurité, accessibilité…
 
 - Chaque ligne affiche ✅ ou ❌ ; le script se termine en erreur s'il y a au moins un ❌.
 - Les tests **écrivent dans la base locale** (comptes de test, votes) : jamais sur une base de production.
-- Pour garder la réponse du serveur de chaque test en échec (PR #44) : `DUMP=/tmp/echecs bash tests/features.sh`.
+- Pour garder la réponse du serveur de chaque test en échec : `DUMP=/tmp/echecs bash tests/features.sh`.
 
 Détails et écriture de nouveaux tests : `tests/README.md`.
 
@@ -99,11 +99,10 @@ Détails et écriture de nouveaux tests : `tests/README.md`.
 | `port is already allocated` au démarrage | Le port 8081 est pris par un autre programme | Changer de port (§ 8) : `APP_PORT=8082 docker compose up -d` |
 | « Trop de tentatives » sur `/connexion` | Limite de 20 formulaires par IP en 15 min. En local, toutes les requêtes ont la même IP (passerelle Docker) | `docker compose exec db psql -U foodbattle -c "DELETE FROM rate_limit_hits;"` |
 | Compte bloqué après 5 mots de passe faux | Limite par compte (15 min) | Même commande que ci-dessus |
-| Ancienne version d'une page juste après une modification | Cache PHP (OPcache), jusqu'à 2 s de retard | Recharger. Réglé par la PR #44 (`revalidate_freq = 0` en local), après `docker compose up -d --build` |
+| Ancienne version d'une page juste après une modification | Image construite avant la PR #44 : le cache PHP (OPcache) gardait jusqu'à 2 s l'ancienne version | `docker compose up -d --build` (le `Dockerfile` règle `revalidate_freq = 0` en local) |
 | `init.sql` modifié mais rien ne change | Il ne s'exécute que sur une base vide | § 5 (remise à zéro) |
 | `app` ne démarre pas, attend `db` | La base n'a pas fini de démarrer, ou a échoué | `docker compose logs db` |
 | Page 500 | Erreur PHP. En local, le détail s'affiche sur la page | `docker compose logs app` pour la trace complète |
-| Photos des plats absentes | Elles viennent de images.pexels.com : pas de connexion Internet | L'image de secours s'affiche ; le reste du site fonctionne |
 
 ## 8. Configuration
 
