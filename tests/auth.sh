@@ -71,6 +71,11 @@ check "mot de passe < 8 => refusé, reste à l'étape 2b" bash -c "grep -q 'entr
 check "pseudo réaffiché après erreur" has "value=\"$NICK\""
 register r "$NEW" "$NICK" "$(printf 'a%.0s' {1..73})"
 check "mot de passe > 72 octets => refusé" has 'entre 8 et 72'
+t=$(token)
+req r POST /connexion/inscription --data-urlencode "token=$t" --data-urlencode "email=$NEW" \
+    --data-urlencode "nickname=$NICK" --data "password=abcd%00efghijk"
+check "mot de passe avec un caractère nul => refusé proprement (plus d'erreur 500)" \
+    bash -c '[ "$1" = 200 ] && grep -q "caractère non autorisé" <<<"$2"' _ "$CODE" "$BODY"
 register r "$NEW" testeur motdepasse
 check "pseudo déjà pris (casse différente) => refusé" has 'Ce pseudo est déjà pris.'
 register r user@foodbattle.local "$NICK" motdepasse
