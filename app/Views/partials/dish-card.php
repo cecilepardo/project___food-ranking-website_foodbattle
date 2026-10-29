@@ -37,6 +37,7 @@ $rating = $dish['average'] ? score($dish['average']) . '/5' : '—';
             </span>
         </p>
 
-        <a class="btn btn--block card__action" href="<?= $dishUrl ?>">Découvrir et voter</a>
+        <?php /* Même page que le titre : un seul arrêt au clavier et pour les lecteurs d'écran (le titre) */ ?>
+        <a class="btn btn--block card__action" href="<?= $dishUrl ?>" tabindex="-1" aria-hidden="true">Découvrir et voter</a>
     </div>
 </article>

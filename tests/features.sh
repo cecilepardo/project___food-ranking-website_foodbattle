@@ -625,6 +625,49 @@ check "… et dans le titre de la page" has '<h1>Modifier Le Double Smash</h1>'
 req anon GET /classement
 check "classement : tableau en cartes sur mobile (pas de défilement horizontal à 320 px)" \
     bash -c 'grep -q "class=\"table table--cards\"" <<<"$1" && grep -q "data-label=\"Plat\"" <<<"$1"' _ "$BODY"
+req a11y GET /dashboard
+check "dashboard : « Supprimer » complété du nom du plat pour les lecteurs d'écran" \
+    has 'Supprimer<span class="visually-hidden"> Le Double Smash</span>'
+check "… et « Modifier » aussi" has 'Modifier<span class="visually-hidden"> Le Double Smash</span>'
+check "dashboard : libellé « Trier par » des pilules de tri (mobile)" has '<p class="sort-label" aria-hidden="true">Trier par</p>'
+req a11y GET /moderation
+check "modération : boutons complétés par « l'avis de … sur … »" has "<span class=\"visually-hidden\"> l&#039;avis de "
+req anon GET /
+check "accueil : bouton des cartes retiré du parcours clavier (le titre est déjà un lien)" \
+    has 'card__action" href="/plat/[0-9]*" tabindex="-1" aria-hidden="true"'
+check "accueil : flèche « → » masquée aux lecteurs d'écran" has 'Voir le classement <span aria-hidden="true">→</span>'
+req anon GET /plat/1
+check "fiche plat : restaurant et prix ne sont plus des titres (aucun <h3>)" hasnt '<h3'
+check "… le restaurant n'est plus un <h2>" has '<p class="dish-detail__restaurant">'
+check "fiche plat : « ♥ » et « ← » masqués aux lecteurs d'écran" \
+    bash -c 'grep -q "<span aria-hidden=\"true\">♥</span>" <<<"$1" && grep -q "<span aria-hidden=\"true\">←</span>" <<<"$1"' _ "$BODY"
+
+section "Accessibilité : erreurs reliées à leur champ"
+INVALID='aria-invalid="true" aria-describedby="form-error"'
+step1 err-e pas-un-email
+check "email invalide => champ email signalé invalide et relié au message" has "autocomplete=\"email\" required autofocus $INVALID>"
+check "… message d'erreur avec id=\"form-error\"" has 'id="form-error" role="alert"'
+req err-ok GET /connexion
+check "sans erreur => aucun champ signalé invalide" hasnt 'aria-invalid'
+step1 err-p user@foodbattle.local; password err-p user@foodbattle.local faux
+check "mot de passe faux => champ mot de passe signalé invalide" has "autocomplete=\"current-password\" required autofocus $INVALID>"
+for i in 1 2 3 4 5; do sql "INSERT INTO rate_limit_hits (key) VALUES ('login:user@foodbattle.local')" >/dev/null; done
+step1 err-b user@foodbattle.local; password err-b user@foodbattle.local faux
+check "compte bloqué => 429" [ "$CODE" = 429 ]
+check "… le mot de passe n'est pas en cause : champ non signalé invalide" hasnt 'aria-invalid'
+sql "DELETE FROM rate_limit_hits" >/dev/null
+taken=$(sql "SELECT nickname FROM users WHERE email='user@foodbattle.local'")
+step1 err-r "err-$RUN@test.fr"; register err-r "err-$RUN@test.fr" "$taken" motdepasse
+check "pseudo déjà pris => pseudo signalé invalide, relié au message et à son aide" \
+    has 'aria-invalid="true" aria-describedby="form-error nickname-hint"'
+check "… mot de passe non signalé, mais toujours relié à son aide" has 'autocomplete="new-password" required aria-describedby="password-hint">'
+step1 err-r2 "err2-$RUN@test.fr"; register err-r2 "err2-$RUN@test.fr" "Err$RUN" court
+check "mot de passe trop court => mot de passe signalé invalide, pas le pseudo" \
+    bash -c 'grep -q "aria-describedby=\"form-error password-hint\"" <<<"$1" && grep -q "aria-describedby=\"nickname-hint\">" <<<"$1"' _ "$BODY"
+login err-a user@foodbattle.local foodbattle-user
+req err-a GET /plat/2; t=$(token)
+req err-a POST /plat/2/avis --data-urlencode "token=$t" --data "score=4" --data-urlencode $'comment=Caract\x01re interdit'
+check "avis refusé => commentaire signalé invalide" has "required $INVALID>"
 
 section "Page 500 (base de données coupée)"
 docker compose stop db >/dev/null 2>&1

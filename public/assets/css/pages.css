@@ -108,6 +108,22 @@
     flex: 1;
 }
 
+/* Restaurant et prix : même apparence que les anciens h2 et h3 (voir base.css),
+   sans être des titres : ils n'ouvrent pas de section dans le plan de la page. */
+.dish-detail__restaurant {
+    margin: var(--space-xl) 0 0.83em;   /* marges d'un h2 */
+    font-family: var(--font-display);
+    font-size: var(--font-size-h2);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-display);
+}
+
+.dish-detail__price {
+    font-size: var(--font-size-card-title);
+    font-weight: var(--font-weight-black);
+    line-height: var(--line-height-snug);
+}
+
 /* Note moyenne et nombre de votes, sous le prix (même ligne que sur les cartes de l'accueil) */
 .dish-detail__rating {
     font-weight: var(--font-weight-bold);

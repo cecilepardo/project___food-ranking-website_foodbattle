@@ -21,7 +21,7 @@ $votes  = (int) $dish['votes'];
 // "4,6/5" ou "—" si personne n'a encore noté le plat (comme sur les cartes de l'accueil)
 $rating = $dish['average'] ? score($dish['average']) . '/5' : '—';
 ?>
-<p><a href="/">← Tous les plats</a></p>
+<p><a href="/"><span aria-hidden="true">←</span> Tous les plats</a></p>
 
 <section class="dish-detail">
     <?= View::partial('dish-photo', ['dish' => $dish]) ?>
@@ -29,10 +29,10 @@ $rating = $dish['average'] ? score($dish['average']) . '/5' : '—';
     <div class="dish-detail__body">
         <span class="tag"><?= e($dish['category']) ?></span>
         <h1><?= e($dish['name']) ?></h1>
-        <h2><?= e($dish['restaurant']) ?></h2>
+        <p class="dish-detail__restaurant"><?= e($dish['restaurant']) ?></p>
         <p><?= e($dish['address']) ?>, <?= e($dish['city']) ?></p>
         <p><?= e($dish['description']) ?></p>
-        <h3><?= euro($dish['price']) ?></h3>
+        <p class="dish-detail__price"><?= euro($dish['price']) ?></p>
         <p class="dish-detail__rating">
             <!-- L'étoile est décorative : un lecteur d'écran lirait "étoile noire" -->
             <span aria-hidden="true">★</span>
@@ -42,10 +42,10 @@ $rating = $dish['average'] ? score($dish['average']) . '/5' : '—';
         <?php if ($currentUser): ?>
             <form method="post" action="/plat/<?= $dishId ?>/vote">
                 <?= csrf_field() ?>
-                <button class="btn">♥ Voter pour ce plat</button>
+                <button class="btn"><span aria-hidden="true">♥</span> Voter pour ce plat</button>
             </form>
         <?php else: ?>
-            <a class="btn" href="/plat/<?= $dishId ?>/participer">♥ Connecte-toi pour voter</a>
+            <a class="btn" href="/plat/<?= $dishId ?>/participer"><span aria-hidden="true">♥</span> Connecte-toi pour voter</a>
         <?php endif; ?>
 
         <p><small>Le vote désigne ton favori ; la note exprime ton appréciation sur 5.</small></p>
@@ -71,7 +71,7 @@ $rating = $dish['average'] ? score($dish['average']) . '/5' : '—';
 <h2>Donner mon avis</h2>
 
 <?php if ($ratingError): ?>
-    <p class="message message--error" role="alert">Vérifie les champs de ton avis.</p>
+    <p class="message message--error" id="form-error" role="alert">Vérifie les champs de ton avis.</p>
 <?php endif; ?>
 
 <?php if ($currentUser): ?>
@@ -91,7 +91,7 @@ $rating = $dish['average'] ? score($dish['average']) . '/5' : '—';
 
         <label>
             Commentaire
-            <textarea name="comment" maxlength="1000" required><?= e($ratingComment) ?></textarea>
+            <textarea name="comment" maxlength="1000" required<?= field_attrs($ratingError) ?>><?= e($ratingComment) ?></textarea>
         </label>
 
         <button class="btn">Publier mon avis</button>
