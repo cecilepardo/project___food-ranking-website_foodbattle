@@ -193,6 +193,10 @@ class AuthController extends Controller
         if (mb_strlen($password) < self::PASSWORD_MIN_LENGTH || strlen($password) > self::PASSWORD_MAX_BYTES) {
             return ['field' => 'password', 'message' => 'Le mot de passe doit contenir entre 8 et 72 caractères.'];
         }
+        // bcrypt refuse le caractère nul (password_hash lève une ValueError => page 500) : on le refuse avant.
+        if (str_contains($password, "\0")) {
+            return ['field' => 'password', 'message' => 'Le mot de passe contient un caractère non autorisé.'];
+        }
         if (User::emailExists($email)) {
             return ['field' => null, 'message' => 'Un compte existe déjà avec cet email.'];
         }
