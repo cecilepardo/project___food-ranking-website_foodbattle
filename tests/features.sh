@@ -616,6 +616,32 @@ for f in burger tacos pizza {1..12}; do
 done
 check "les 15 fichiers photo répondent 200" [ "$missing" = 0 ]
 
+section "Photo envoyée à l'ajout d'un plat"
+echo 'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEklEQVR4nGM8ESDCwMDAxAAGAA7uATBz1zmgAAAAAElFTkSuQmCC' | base64 -d > "$DIR/photo.png"
+echo 'pas une image' > "$DIR/faux.jpg"
+head -c 2200000 /dev/zero > "$DIR/gros.jpg"
+login up admin@foodbattle.local foodbattle-admin
+add_dish() {  # add_dish NOM [FICHIER] : ajoute un plat en admin, avec une photo si FICHIER est donné
+    req up GET /dashboard; local t; t=$(token)
+    req up POST /dashboard/plats -F "token=$t" -F "name=$1 $RUN" -F establishment_id=1 -F category=pizza -F price=5 ${2:+-F "photo=@$2"}
+}
+add_dish "Avec photo" "$DIR/photo.png"
+check "plat ajouté avec une photo PNG => accepté" [ "$LOC" = "/dashboard?added=1" ]
+UP=$(sql "SELECT id FROM dishes WHERE name = 'Avec photo $RUN'")
+req up GET "/plat/$UP"
+check "… sa fiche affiche la photo envoyée (/uploads/plats/$UP.png)" has "src=\"/uploads/plats/$UP.png?v="
+check "… le fichier est servi en image/png" \
+    [ "$(curl -s -o /dev/null -w '%{http_code} %{content_type}' "$BASE/uploads/plats/$UP.png")" = "200 image/png" ]
+add_dish "Faux fichier" "$DIR/faux.jpg"
+check "texte renommé en .jpg => refusé" has 'La photo doit être une image JPEG, PNG ou WebP.'
+add_dish "Trop lourde" "$DIR/gros.jpg"
+check "photo de plus de 2 Mo => refusée" has 'La photo dépasse 2 Mo.'
+check "… aucun plat créé quand la photo est refusée" [ "$(sql "SELECT count(*) FROM dishes WHERE name IN ('Faux fichier $RUN', 'Trop lourde $RUN')")" = 0 ]
+req up GET /dashboard; t=$(token)
+req up POST "/dashboard/plats/$UP/supprimer" --data-urlencode "token=$t"
+check "suppression du plat => sa photo est supprimée aussi" \
+    [ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/uploads/plats/$UP.png")" = 404 ]
+
 section "Bouton thème : retour vers une page qui existe"
 req th GET "/classement"
 check "page GET : le bouton thème revient sur la page (back=/classement)" has 'name="back" value="/classement"'

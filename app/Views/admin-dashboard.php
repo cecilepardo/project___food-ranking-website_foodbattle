@@ -9,6 +9,7 @@
  * @var bool        $descending  true = ordre décroissant
  * @var string|null $error    Message si le formulaire d'ajout est invalide
  * @var bool        $added    true après l'ajout d'un plat
+ * @var bool        $photoFailed  true si le plat a été ajouté mais pas sa photo
  * @var bool        $updated  true après la modification d'un plat
  * @var bool        $deleted  true après la suppression d'un plat
  */
@@ -26,6 +27,10 @@ use App\Core\View;
 
 <?php if ($added): ?>
     <p class="message">Le plat a été ajouté.</p>
+<?php endif; ?>
+
+<?php if ($photoFailed): ?>
+    <p class="message message--error" role="alert">La photo n'a pas pu être enregistrée : le plat affiche celle de sa catégorie.</p>
 <?php endif; ?>
 
 <?php if ($updated): ?>
@@ -79,7 +84,7 @@ use App\Core\View;
         <span class="icon icon--chevron-down panel__chevron" aria-hidden="true"></span>
     </summary>
 
-    <form class="form-panel" method="post" action="/dashboard/plats">
+    <form class="form-panel" method="post" action="/dashboard/plats" enctype="multipart/form-data">
         <?= csrf_field() ?>
 
         <label>
@@ -119,6 +124,12 @@ use App\Core\View;
         <label>
             Description
             <textarea name="description"></textarea>
+        </label>
+
+        <label>
+            Photo (facultative)
+            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" aria-describedby="photo-hint">
+            <small id="photo-hint">JPEG, PNG ou WebP, 2 Mo maximum. Sans photo, le plat prend celle de sa catégorie.</small>
         </label>
 
         <button class="btn">Ajouter</button>

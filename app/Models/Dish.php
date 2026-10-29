@@ -149,13 +149,19 @@ class Dish
         )->fetchAll();
     }
 
-    public static function create(int $establishmentId, string $name, string $category, string $description, float $price): void
+    /**
+     * Crée un plat et renvoie son id (sert à nommer sa photo).
+     */
+    public static function create(int $establishmentId, string $name, string $category, string $description, float $price): int
     {
         $statement = Database::get()->prepare(
             'INSERT INTO dishes (establishment_id, name, category, description, price)
-             VALUES (?, ?, ?, ?, ?)'
+             VALUES (?, ?, ?, ?, ?)
+             RETURNING id'
         );
         $statement->execute([$establishmentId, $name, $category, $description, $price]);
+
+        return (int) $statement->fetchColumn();
     }
 
     public static function update(int $id, string $name, float $price): void

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Core\Controller;
+use App\Core\DishPhoto;
 use App\Models\Dish;
 use App\Models\Establishment;
 
@@ -40,7 +41,20 @@ class DashboardController extends Controller
             return;
         }
 
-        Dish::create($establishmentId, $name, $category, $description, $price);
+        // Photo facultative : vérifiée avant de créer le plat, pour ne pas créer un plat à moitié.
+        $photo      = $_FILES['photo'] ?? null;
+        $photoError = DishPhoto::uploadError($photo);
+        if ($photoError !== null) {
+            $this->showDashboard($photoError);
+            return;
+        }
+
+        $dishId = Dish::create($establishmentId, $name, $category, $description, $price);
+
+        // Le plat existe déjà : on le garde, mais on prévient que sa photo n'a pas suivi.
+        if (!DishPhoto::save($dishId, $photo)) {
+            $this->redirect('/dashboard?added=1&photo=erreur');
+        }
 
         $this->redirect('/dashboard?added=1');
     }
@@ -61,6 +75,7 @@ class DashboardController extends Controller
             'categories'     => Dish::CATEGORIES,
             'error'          => $error,
             'added'          => isset($_GET['added']),
+            'photoFailed'    => isset($_GET['photo']),
             'updated'        => isset($_GET['updated']),
             'deleted'        => isset($_GET['deleted']),
         ]);
