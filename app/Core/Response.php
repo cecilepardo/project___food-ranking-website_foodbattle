@@ -19,13 +19,16 @@ class Response
     /**
      * Vrai pour un chemin du site ("/moderation?page=2"), faux pour tout ce qui mènerait ailleurs :
      * les navigateurs lisent "//pirate.com" et "/\pirate.com" comme l'adresse d'un autre site.
+     * Les caractères de contrôle sont refusés aussi : les navigateurs effacent tabulations et retours
+     * à la ligne d'une adresse, donc "/<tabulation>/pirate.com" deviendrait "//pirate.com".
      * À vérifier avant de rediriger vers une adresse fournie par le navigateur (protection contre la redirection ouverte).
      */
     public static function isLocalPath(string $url): bool
     {
         return str_starts_with($url, '/')
             && !str_starts_with($url, '//')
-            && !str_starts_with($url, '/\\');
+            && !str_starts_with($url, '/\\')
+            && preg_match('/[\x00-\x1F\x7F]/', $url) !== 1;
     }
 
     /** Titre de la page d'erreur selon le code HTTP. */

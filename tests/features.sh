@@ -546,6 +546,16 @@ req dem GET /dashboard
 check "rétrogradé en base, toujours connecté => /dashboard refusé (403)" [ "$CODE" = 403 ]
 sql "DELETE FROM users WHERE email = 'demote-$RUN@test.fr'" >/dev/null
 
+# Compte supprimé en base pendant que sa session est ouverte
+step1 gone "gone-$RUN@test.fr"; register gone "gone-$RUN@test.fr" "Gone$RUN" motdepasse
+req gone GET /plat/1; t=$(token)
+sql "DELETE FROM users WHERE email = 'gone-$RUN@test.fr'" >/dev/null
+req gone POST /plat/1/vote --data-urlencode "token=$t"
+check "compte supprimé, session ouverte : vote => renvoyé vers /connexion (plus d'erreur 500)" [ "$CODE" = 302 -a "$LOC" = /connexion ]
+check "… aucun vote enregistré au nom d'un compte disparu" [ "$(sql "SELECT count(*) FROM votes WHERE user_id IS NULL")" = 0 ]
+req gone GET /
+check "… et il est déconnecté (bouton Connexion dans l'en-tête)" has 'href="/connexion"'
+
 section "Menu de l'administration (pages Plats, Établissements, Modération)"
 req navv GET /dashboard/etablissements
 check "visiteur GET /dashboard/etablissements => 302 vers /connexion" [ "$CODE" = 302 -a "$LOC" = /connexion ]
@@ -596,6 +606,17 @@ PB=$(sql "SELECT id FROM dishes WHERE name LIKE '%$RUN'")
 req pb POST /dashboard/plats --data-urlencode "token=$t" --data "name=$E121" \
     --data establishment_id=1 --data category=burger --data price=5
 check "ajout d'un plat au nom de 121 caractères => refusé" has 'Vérifie les champs du plat.'
+dishes_before=$(sql "SELECT count(*) FROM dishes")
+req pb POST /dashboard/plats --data-urlencode "token=$t" --data "name=%E2%80%8B" \
+    --data establishment_id=1 --data category=burger --data price=5
+check "ajout d'un plat au nom invisible (U+200B seul) => refusé" has 'Vérifie les champs du plat.'
+req pb POST /dashboard/plats --data-urlencode "token=$t" --data "name=Longue+description+$RUN" \
+    --data establishment_id=1 --data category=burger --data price=5 --data "description=$(printf 'a%.0s' {1..1001})"
+check "ajout d'un plat avec une description de 1001 caractères => refusé" has 'Vérifie les champs du plat.'
+check "… aucun de ces plats créé" [ "$(sql "SELECT count(*) FROM dishes")" = "$dishes_before" ]
+req pb GET "/dashboard/plats/$PB/modifier"; t=$(token)
+req pb POST "/dashboard/plats/$PB/modifier" --data-urlencode "token=$t" --data "name=%E2%80%8B" --data price=6
+check "modification avec un nom invisible (U+200B seul) => refusée" has 'Vérifie le nom et le prix.'
 req pb GET "/dashboard/plats/$PB/modifier"; t=$(token)
 req pb POST "/dashboard/plats/$PB/modifier" --data-urlencode "token=$t" --data "name=${E61}+bis+$RUN" --data price=6
 check "modification avec un nom de 76 caractères accentués => acceptée" [ "$(sql "SELECT char_length(name) FROM dishes WHERE id=$PB")" = $((61 + 5 + ${#RUN})) ]

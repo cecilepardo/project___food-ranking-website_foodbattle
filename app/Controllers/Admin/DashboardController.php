@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\Core\Controller;
 use App\Core\DishPhoto;
+use App\Core\Validator;
 use App\Models\Dish;
 use App\Models\Establishment;
 
@@ -36,7 +37,7 @@ class DashboardController extends Controller
         $category        = $this->postString('category');
         $description     = trim($this->postString('description'));
 
-        if (!$this->isValidDish($name, $price, $category, $establishmentId)) {
+        if (!$this->isValidDish($name, $price, $category, $establishmentId, $description)) {
             $this->showDashboard('Vérifie les champs du plat.');
             return;
         }
@@ -85,15 +86,21 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function isValidDish(string $name, mixed $price, string $category, mixed $establishmentId): bool
+    /**
+     * Nom : 120 caractères maximum (VARCHAR(120)) et au moins un caractère visible.
+     * Description facultative : 1000 caractères maximum (comme un avis), sans caractère invisible piégeant.
+     */
+    private function isValidDish(string $name, mixed $price, string $category, mixed $establishmentId, string $description): bool
     {
         $establishmentIds = array_column(Establishment::all(), 'id');
 
-        $nameIsValid          = $name !== '' && mb_strlen($name) <= 120;
+        $nameIsValid          = mb_strlen($name) <= 120 && Validator::isCleanText($name);
         $priceIsValid         = $price !== false && $price !== null && $price >= 0 && $price <= Dish::MAX_PRICE;
         $categoryIsValid      = array_key_exists($category, Dish::CATEGORIES);
         $establishmentIsValid = in_array($establishmentId, $establishmentIds);
+        $descriptionIsValid   = $description === ''
+            || (mb_strlen($description) <= 1000 && Validator::isCleanText($description));
 
-        return $nameIsValid && $priceIsValid && $categoryIsValid && $establishmentIsValid;
+        return $nameIsValid && $priceIsValid && $categoryIsValid && $establishmentIsValid && $descriptionIsValid;
     }
 }

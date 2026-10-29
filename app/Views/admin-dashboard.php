@@ -124,7 +124,7 @@ use App\Core\View;
 
         <label>
             Description
-            <textarea name="description"></textarea>
+            <textarea name="description" maxlength="1000"></textarea>
         </label>
 
         <?php /* Aide au-dessus du champ (taille maximale visible avant de choisir) ; app.js signale un fichier trop lourd */ ?>

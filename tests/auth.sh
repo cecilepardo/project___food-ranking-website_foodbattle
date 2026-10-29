@@ -71,6 +71,11 @@ check "mot de passe < 8 => refusé, reste à l'étape 2b" bash -c "grep -q 'entr
 check "pseudo réaffiché après erreur" has "value=\"$NICK\""
 register r "$NEW" "$NICK" "$(printf 'a%.0s' {1..73})"
 check "mot de passe > 72 octets => refusé" has 'entre 8 et 72'
+t=$(token)
+req r POST /connexion/inscription --data-urlencode "token=$t" --data-urlencode "email=$NEW" \
+    --data-urlencode "nickname=$NICK" --data "password=abcd%00efghijk"
+check "mot de passe avec un caractère nul => refusé proprement (plus d'erreur 500)" \
+    bash -c '[ "$1" = 200 ] && grep -q "caractère non autorisé" <<<"$2"' _ "$CODE" "$BODY"
 register r "$NEW" testeur motdepasse
 check "pseudo déjà pris (casse différente) => refusé" has 'Ce pseudo est déjà pris.'
 register r user@foodbattle.local "$NICK" motdepasse
@@ -92,6 +97,20 @@ step1 r2 "$NEW"
 check "email du nouveau compte => étape mot de passe" has 'Bon retour'
 password r2 "$NEW" motdepasse
 check "reconnexion => 302 vers /" [ "$CODE" = 302 -a "$LOC" = / ]
+
+section "Inscriptions simultanées du même email (double-clic)"
+DOUBLE="double-$RUN@test.fr"
+for i in 1 2 3 4; do step1 "dbl$i" "$DOUBLE"; token > "$DIR/dbl$i.token"; done
+codes=$(for i in 1 2 3 4; do
+    curl -s -o "$DIR/dbl$i.body" -w '%{http_code}\n' -b "$DIR/dbl$i" -c "$DIR/dbl$i" -X POST "$BASE/connexion/inscription" \
+        --data-urlencode "token=$(cat "$DIR/dbl$i.token")" --data-urlencode "email=$DOUBLE" \
+        --data-urlencode "nickname=Double$i$RUN" --data-urlencode "password=motdepasse" &
+done; wait)
+check "4 envois en même temps => aucune erreur 500" bash -c '! grep -q 500 <<<"$1"' _ "$codes"
+check "… un seul compte créé" [ "$(sql "SELECT count(*) FROM users WHERE email='$DOUBLE'")" = 1 ]
+check "… les autres envois affichent « Un compte existe déjà »" \
+    [ "$(grep -l 'Un compte existe déjà' "$DIR"/dbl?.body | wc -l)" -eq "$(grep -c 200 <<<"$codes")" ]
+sql "DELETE FROM users WHERE email='$DOUBLE'" >/dev/null
 
 section "Limitation par compte (niveau 2)"
 for i in 1 2 3 4 5; do step1 b user@foodbattle.local; password b user@foodbattle.local "faux-$i"; done
@@ -180,6 +199,11 @@ check "/\pirate.com refusé" grep -qF '/\pirate.com           => refusé' <<<"$o
 check "https://pirate.com refusé" grep -q '^https://pirate.com .*=> refusé' <<<"$out"
 check "javascript: refusé" grep -q '^javascript:alert(1) .*=> refusé' <<<"$out"
 check "chaîne vide refusée" grep -q '^(vide) .*=> refusé' <<<"$out"
+check "/<tabulation>/pirate.com refusé (le navigateur lirait //pirate.com)" grep -qF '/\t/pirate.com         => refusé' <<<"$out"
+check "/<retour à la ligne>/pirate.com refusé" grep -qF '/\n/pirate.com         => refusé' <<<"$out"
+req th GET /classement; t=$(token)
+req th POST /theme --data-urlencode "token=$t" --data "back=%2F%09%2Fpirate.com"
+check "bouton thème avec back=/<tabulation>/pirate.com => renvoyé vers /" [ "$LOC" = / ]
 
 section "RequireGuest"
 step1 l user@foodbattle.local; password l user@foodbattle.local foodbattle-user
