@@ -104,7 +104,7 @@ done; wait)
 check "4 envois en même temps => aucune erreur 500" bash -c '! grep -q 500 <<<"$1"' _ "$codes"
 check "… un seul compte créé" [ "$(sql "SELECT count(*) FROM users WHERE email='$DOUBLE'")" = 1 ]
 check "… les autres envois affichent « Un compte existe déjà »" \
-    [ "$(grep -l 'Un compte existe déjà' "$DIR"/dbl?.body | wc -l)" = "$(grep -c 200 <<<"$codes")" ]
+    [ "$(grep -l 'Un compte existe déjà' "$DIR"/dbl?.body | wc -l)" -eq "$(grep -c 200 <<<"$codes")" ]
 sql "DELETE FROM users WHERE email='$DOUBLE'" >/dev/null
 
 section "Limitation par compte (niveau 2)"
