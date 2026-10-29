@@ -54,6 +54,17 @@ class Response
     }
 
     /**
+     * Arrête la requête et renvoie $data en JSON (pour le JavaScript de la page).
+     */
+    public static function json(array $data, int $statusCode = 200): never
+    {
+        http_response_code($statusCode);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        exit;
+    }
+
+    /**
      * HTML de la page d'erreur. $details (trace technique) n'est passé qu'en dev.
      */
     public static function errorPage(int $statusCode, string $message, ?string $details = null): string

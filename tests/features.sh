@@ -781,6 +781,55 @@ req err-a GET /plat/2; t=$(token)
 req err-a POST /plat/2/avis --data-urlencode "token=$t" --data "score=4" --data-urlencode $'comment=Caract\x01re interdit'
 check "avis refusé => commentaire signalé invalide" has "required $INVALID>"
 
+section "Tirage au sort d'un plat (/hasard)"
+req rd GET /hasard
+check "/hasard => redirection vers la fiche d'un plat" bash -c '[ "$1" = 302 ] && [[ "$2" =~ ^/plat/[0-9]+$ ]]' _ "$CODE" "$LOC"
+check "… le plat tiré existe en base" [ "$(sql "SELECT COUNT(*) FROM dishes WHERE id=${LOC##*/}")" = 1 ]
+
+# Pas de tableau associatif (absent du bash 3 de macOS) : on compte avec sort | uniq -c
+draws=""
+for _ in $(seq 1 200); do req rd GET /hasard; draws+="${LOC##*/}"$'\n'; done
+counts=$(grep -v '^$' <<<"$draws" | sort | uniq -c)
+n=$(sql "SELECT COUNT(*) FROM dishes")
+max=$(awk '{print $1}' <<<"$counts" | sort -n | tail -1)
+check "200 tirages => les $n plats sortent tous" [ "$(wc -l <<<"$counts" | tr -d ' ')" = "$n" ]
+check "… aucun plat largement favorisé (le plus tiré : $max fois, limite $((600 / n)) = 3 × la moyenne)" [ "$max" -lt $((600 / n)) ]
+
+ok=1
+for _ in $(seq 1 10); do
+    req rd GET "/hasard?categorie=pizza"
+    [ "$(sql "SELECT category FROM dishes WHERE id=${LOC##*/}")" = pizza ] || ok=0
+done
+check "/hasard?categorie=pizza => 10 tirages, que des pizzas" [ "$ok" = 1 ]
+
+req rd GET /hasard.json
+check "/hasard.json => 200 en JSON" bash -c '[ "$1" = 200 ] && grep -qi "^content-type: application/json" "$2"' _ "$CODE" "$DIR/headers"
+# winner_id nb_plats gagnant_dans_la_liste champs_présents url
+read -r w_id w_count w_in w_fields w_url <<<"$(docker compose exec -T app php -r '
+    $d = json_decode(stream_get_contents(STDIN), true);
+    $w = $d["winner"];
+    echo $w["id"], " ", count($d["dishes"]), " ", in_array($w, $d["dishes"]) ? "oui" : "non", " ",
+        isset($w["name"], $w["photo"], $w["restaurant"], $w["city"], $w["categoryKey"], $w["category"], $w["price"], $w["rating"], $w["url"])
+            && preg_match("/^\d+,\d\d €$/u", $w["price"]) && preg_match("#^(\d,\d/5|—) · \d+ votes?$#u", $w["rating"]) ? "oui" : "non",
+        " ", $w["url"];' <<<"$BODY")"
+check "… le gagnant existe en base" [ "$(sql "SELECT COUNT(*) FROM dishes WHERE id=$w_id")" = 1 ]
+check "… une douzaine de plats pour l'animation (12 reçus : $w_count)" [ "$w_count" = 12 ]
+check "… le gagnant fait partie des plats de l'animation" [ "$w_in" = oui ]
+check "… nom, photo, établissement, ville, catégorie, prix (12,50 €), note (4,0/5 · 9 votes) et URL fournis" [ "$w_fields" = oui ]
+check "… URL du gagnant = sa fiche" [ "$w_url" = "/plat/$w_id" ]
+
+# Aucun plat à tirer : les pizzas passent un instant en burgers, puis reprennent leur catégorie
+pizzas=$(sql "SELECT string_agg(id::text, ',') FROM dishes WHERE category='pizza'")
+sql "UPDATE dishes SET category='burger' WHERE id IN ($pizzas)" >/dev/null
+req rd GET "/hasard?categorie=pizza"
+check "aucun plat à tirer => /hasard affiche un message (404), pas d'erreur 500" bash -c '[ "$1" = 404 ] && grep -q "Aucun plat" <<<"$2"' _ "$CODE" "$BODY"
+req rd GET "/hasard.json?categorie=pizza"
+check "… /hasard.json => 404 avec un message JSON" bash -c '[ "$1" = 404 ] && grep -q "\"error\":\"Aucun plat" <<<"$2"' _ "$CODE" "$BODY"
+sql "UPDATE dishes SET category='pizza' WHERE id IN ($pizzas)" >/dev/null
+
+req rd GET /hasardXjson
+check "le point de /hasard.json n'est pas un joker : /hasardXjson => 404" [ "$CODE" = 404 ]
+
 section "Page 500 (base de données coupée)"
 docker compose stop db >/dev/null 2>&1
 req ep GET /
