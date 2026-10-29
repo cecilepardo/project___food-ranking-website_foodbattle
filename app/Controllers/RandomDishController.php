@@ -67,16 +67,21 @@ class RandomDishController extends Controller
     }
 
     /**
-     * Ce que la roue affiche d'un plat.
+     * Ce que la roue et la fenêtre du résultat affichent d'un plat (textes déjà formatés).
      */
     private function forWheel(array $dish): array
     {
         return [
-            'id'         => (int) $dish['id'],
-            'name'       => $dish['name'],
-            'restaurant' => $dish['restaurant'],
-            'photo'      => DishPhoto::url($dish),
-            'url'        => '/plat/' . (int) $dish['id'],
+            'id'          => (int) $dish['id'],
+            'name'        => $dish['name'],
+            'restaurant'  => $dish['restaurant'],
+            'city'        => $dish['city'],
+            'categoryKey' => $dish['category'],                                         // case où la roue s'arrête
+            'category'    => Dish::CATEGORIES[$dish['category']] ?? $dish['category'],  // "Burgers"
+            'price'       => euro($dish['price']),                                      // "12,50 €"
+            'rating'      => rating_summary($dish),                                     // "4,0/5 · 9 votes"
+            'photo'       => DishPhoto::url($dish),
+            'url'         => '/plat/' . (int) $dish['id'],
         ];
     }
 }

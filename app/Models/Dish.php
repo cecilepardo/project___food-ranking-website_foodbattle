@@ -190,7 +190,8 @@ class Dish
 
     /**
      * $limit plats différents, dans un ordre tiré au sort par PostgreSQL (moins s'il n'y en a pas assez).
-     * Juste ce qu'il faut pour les afficher sur la roue : nom, catégorie (photo par défaut) et restaurant.
+     * Juste ce qu'il faut pour la roue et la fenêtre du résultat : nom, catégorie, prix, restaurant, ville,
+     * note moyenne et nombre de votes.
      */
     public static function randomMany(int $limit, ?string $category = null): array
     {
@@ -198,7 +199,8 @@ class Dish
         $params = $category === null ? [$limit] : [$category, $limit];
 
         $statement = Database::get()->prepare(
-            "SELECT d.id, d.name, d.category, e.name AS restaurant
+            "SELECT d.id, d.name, d.category, d.price, e.name AS restaurant, e.city,
+                    " . self::STATS_COLUMNS . "
              FROM dishes d
              JOIN establishments e ON e.id = d.establishment_id
              $where

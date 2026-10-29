@@ -809,11 +809,13 @@ read -r w_id w_count w_in w_fields w_url <<<"$(docker compose exec -T app php -r
     $d = json_decode(stream_get_contents(STDIN), true);
     $w = $d["winner"];
     echo $w["id"], " ", count($d["dishes"]), " ", in_array($w, $d["dishes"]) ? "oui" : "non", " ",
-        isset($w["name"], $w["photo"], $w["restaurant"], $w["url"]) ? "oui" : "non", " ", $w["url"];' <<<"$BODY")"
+        isset($w["name"], $w["photo"], $w["restaurant"], $w["city"], $w["categoryKey"], $w["category"], $w["price"], $w["rating"], $w["url"])
+            && preg_match("/^\d+,\d\d €$/u", $w["price"]) && preg_match("#^(\d,\d/5|—) · \d+ votes?$#u", $w["rating"]) ? "oui" : "non",
+        " ", $w["url"];' <<<"$BODY")"
 check "… le gagnant existe en base" [ "$(sql "SELECT COUNT(*) FROM dishes WHERE id=$w_id")" = 1 ]
 check "… une douzaine de plats pour l'animation (12 reçus : $w_count)" [ "$w_count" = 12 ]
 check "… le gagnant fait partie des plats de l'animation" [ "$w_in" = oui ]
-check "… nom, photo, établissement et URL fournis" [ "$w_fields" = oui ]
+check "… nom, photo, établissement, ville, catégorie, prix (12,50 €), note (4,0/5 · 9 votes) et URL fournis" [ "$w_fields" = oui ]
 check "… URL du gagnant = sa fiche" [ "$w_url" = "/plat/$w_id" ]
 
 # Aucun plat à tirer : les pizzas passent un instant en burgers, puis reprennent leur catégorie
