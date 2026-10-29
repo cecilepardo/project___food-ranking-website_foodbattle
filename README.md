@@ -15,6 +15,10 @@ Si l'un change, on met l'autre à jour.
 
 ## Documentation
 
+- [Ce qui a changé depuis le prototype](docs/CHANGEMENTS.md) : anomalies corrigées, fonctionnalités ajoutées, avec les PR en preuve
+- [Architecture](docs/ARCHITECTURE.md) : trajet d'une requête, dossiers et règles, routes, données, front, choix et limites
+- [Design system](docs/DESIGN-SYSTEM.md) : intention et public visé, typographie, couleurs et contrastes, composants
+- [Gestion de projet](docs/GESTION-PROJET.md) : méthode agile, rôles, outils, règles Git, chiffres
 - [Installer et lancer en local](docs/INSTALLATION.md) : prérequis, commandes, comptes de démo, tests, dépannage
 - [Mettre en production](docs/MISE-EN-PROD.md) : ce qui change, configuration proposée, déploiement, sauvegardes, vérifications
 
