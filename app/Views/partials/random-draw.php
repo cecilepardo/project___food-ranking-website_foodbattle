@@ -4,6 +4,8 @@
  * Ouverte par le bouton [data-random-draw] du hero (voir random.js) ; sans JavaScript, ce bouton
  * est un simple lien vers /hasard.
  * data-state : spinning (roue) | result (plat gagnant) | empty (aucun plat) | error
+ *
+ * @var array $categories  ['burger' => 'Burgers', ...]
  */
 
 // Parts de la roue, dans le sens des aiguilles d'une montre depuis le haut :
@@ -12,6 +14,21 @@ $segments = [['burger', '🍔'], ['tacos', '🌮'], ['pizza', '🍕'], ['burger'
 ?>
 <dialog class="random-draw" aria-labelledby="random-draw-title" data-state="spinning">
     <h2 class="random-draw__title" id="random-draw-title">Je ne sais pas quoi manger !</h2>
+
+    <?php /* Choisir une catégorie relance un tirage parmi ses plats (random.js), même pendant une rotation */ ?>
+    <fieldset class="random-draw__filter">
+        <legend class="visually-hidden">Catégorie du tirage</legend>
+        <label class="random-draw__chip">
+            <input class="visually-hidden" type="radio" name="random-category" value="" checked>
+            Tout
+        </label>
+        <?php foreach ($categories as $value => $label): ?>
+            <label class="random-draw__chip">
+                <input class="visually-hidden" type="radio" name="random-category" value="<?= e($value) ?>">
+                <?= e($label) ?>
+            </label>
+        <?php endforeach; ?>
+    </fieldset>
 
     <?php /* Décorative pour les lecteurs d'écran : le résultat est annoncé par le message (role="status") */ ?>
     <div class="wheel" aria-hidden="true">

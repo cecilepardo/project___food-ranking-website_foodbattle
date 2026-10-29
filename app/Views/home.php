@@ -32,7 +32,7 @@ $count = count($dishes);
     <img class="hero__logo" src="<?= e(logo_url()) ?>" alt="" width="400" height="160">
 </section>
 
-<?= View::partial('random-draw') ?>
+<?= View::partial('random-draw', ['categories' => $categories]) ?>
 
 <div class="section-header">
     <h2 class="section-header__title">À la carte</h2>
