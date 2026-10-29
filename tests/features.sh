@@ -606,6 +606,17 @@ PB=$(sql "SELECT id FROM dishes WHERE name LIKE '%$RUN'")
 req pb POST /dashboard/plats --data-urlencode "token=$t" --data "name=$E121" \
     --data establishment_id=1 --data category=burger --data price=5
 check "ajout d'un plat au nom de 121 caractères => refusé" has 'Vérifie les champs du plat.'
+dishes_before=$(sql "SELECT count(*) FROM dishes")
+req pb POST /dashboard/plats --data-urlencode "token=$t" --data "name=%E2%80%8B" \
+    --data establishment_id=1 --data category=burger --data price=5
+check "ajout d'un plat au nom invisible (U+200B seul) => refusé" has 'Vérifie les champs du plat.'
+req pb POST /dashboard/plats --data-urlencode "token=$t" --data "name=Longue+description+$RUN" \
+    --data establishment_id=1 --data category=burger --data price=5 --data "description=$(printf 'a%.0s' {1..1001})"
+check "ajout d'un plat avec une description de 1001 caractères => refusé" has 'Vérifie les champs du plat.'
+check "… aucun de ces plats créé" [ "$(sql "SELECT count(*) FROM dishes")" = "$dishes_before" ]
+req pb GET "/dashboard/plats/$PB/modifier"; t=$(token)
+req pb POST "/dashboard/plats/$PB/modifier" --data-urlencode "token=$t" --data "name=%E2%80%8B" --data price=6
+check "modification avec un nom invisible (U+200B seul) => refusée" has 'Vérifie le nom et le prix.'
 req pb GET "/dashboard/plats/$PB/modifier"; t=$(token)
 req pb POST "/dashboard/plats/$PB/modifier" --data-urlencode "token=$t" --data "name=${E61}+bis+$RUN" --data price=6
 check "modification avec un nom de 76 caractères accentués => acceptée" [ "$(sql "SELECT char_length(name) FROM dishes WHERE id=$PB")" = $((61 + 5 + ${#RUN})) ]

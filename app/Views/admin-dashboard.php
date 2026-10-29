@@ -123,7 +123,7 @@ use App\Core\View;
 
         <label>
             Description
-            <textarea name="description"></textarea>
+            <textarea name="description" maxlength="1000"></textarea>
         </label>
 
         <label>
