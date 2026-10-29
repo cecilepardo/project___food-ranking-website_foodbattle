@@ -27,6 +27,7 @@ use App\Core\Theme;
     <link rel="stylesheet" href="<?= e(asset('/assets/css/layout.css')) ?>">
     <link rel="stylesheet" href="<?= e(asset('/assets/css/components.css')) ?>">
     <link rel="stylesheet" href="<?= e(asset('/assets/css/pages.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset('/assets/css/random.css')) ?>">
 </head>
 <body>
     <?php /* Premier arrêt du clavier : permet de sauter l'en-tête et d'aller directement au contenu */ ?>
@@ -41,5 +42,6 @@ use App\Core\Theme;
     <?= \App\Core\View::partial('footer') ?>
 
     <script src="<?= e(asset('/assets/js/app.js')) ?>"></script>
+    <script src="<?= e(asset('/assets/js/random.js')) ?>"></script>
 </body>
 </html>

@@ -20,6 +20,8 @@ $count = count($dishes);
 
         <div class="hero__actions">
             <a class="btn" href="/classement">Voir le classement <span aria-hidden="true">→</span></a>
+            <?php /* Sans JavaScript : lien vers un plat tiré au hasard. Avec : ouvre la roue (random.js) */ ?>
+            <a class="btn btn--secondary" href="/hasard" data-random-draw><span aria-hidden="true">🎰</span> Je ne sais pas quoi manger !</a>
             <?php if (!Auth::check()): ?>
                 <a class="btn btn--secondary" href="/connexion">Créer un compte</a>
             <?php endif; ?>
@@ -29,6 +31,8 @@ $count = count($dishes);
     <!-- Décoratif : le logo de l'en-tête porte déjà le nom du site (alt vide) -->
     <img class="hero__logo" src="<?= e(logo_url()) ?>" alt="" width="400" height="160">
 </section>
+
+<?= View::partial('random-draw') ?>
 
 <div class="section-header">
     <h2 class="section-header__title">À la carte</h2>

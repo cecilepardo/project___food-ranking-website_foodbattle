@@ -1,0 +1,180 @@
+/* ==========================================================================
+   ROUE DU DESTIN
+   « Je ne sais pas quoi manger ! » : fenêtre de tirage (partials/random-draw.php, js/random.js).
+   ========================================================================== */
+
+
+/* Fenêtre
+   Centrée par le navigateur (<dialog> ouvert avec showModal), jamais plus large que l'écran.
+   -------------------------------------------------------------------------- */
+
+.random-draw {
+    width: min(92vw, 420px);
+    max-height: 92vh;
+    padding: var(--space-lg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    box-shadow: var(--shadow-raised);
+    text-align: center;
+}
+
+.random-draw::backdrop {
+    background: color-mix(in srgb, var(--color-bg) 75%, transparent);
+}
+
+.random-draw__title {
+    margin: 0 0 var(--space-md);
+}
+
+.random-draw__status {
+    min-height: 1.5em;   /* la fenêtre ne saute pas quand le message apparaît */
+    margin: var(--space-sm) 0;
+    font-weight: var(--font-weight-bold);
+}
+
+
+/* Roue
+   6 parts de 60°, deux tons de jaune en alternance. La part n°1 est centrée en haut, sous le pointeur ;
+   random.js fait tourner le disque (--wheel-rotation) jusqu'à la part du plat tiré.
+   -------------------------------------------------------------------------- */
+
+.wheel {
+    position: relative;
+    width: min(70vw, 280px);
+    aspect-ratio: 1;
+    margin: var(--space-lg) auto var(--space-md);
+}
+
+.wheel__disc {
+    --wheel-dark: color-mix(in srgb, var(--color-highlight-bg) 80%, var(--color-brand));
+
+    position: absolute;
+    inset: 0;
+    border: 8px solid var(--color-brand);
+    border-radius: 50%;
+    background: conic-gradient(from -30deg,
+        var(--color-highlight-bg) 0 60deg, var(--wheel-dark) 60deg 120deg,
+        var(--color-highlight-bg) 120deg 180deg, var(--wheel-dark) 180deg 240deg,
+        var(--color-highlight-bg) 240deg 300deg, var(--wheel-dark) 300deg 360deg);
+    box-shadow: var(--shadow-raised);
+    transform: rotate(var(--wheel-rotation, 0deg));
+    transition: transform 4s cubic-bezier(0.15, 0.85, 0.25, 1);   /* part vite, ralentit longtemps */
+}
+
+/* Chaque icône est posée en haut du disque, puis tournée autour du centre jusqu'à sa part */
+.wheel__icon {
+    position: absolute;
+    inset: 0;
+    padding-top: 9%;
+    font-size: clamp(1.75rem, 8vw, 2.5rem);
+    line-height: 1;
+    rotate: calc(var(--index, 0) * 60deg);
+}
+
+.wheel__icon:nth-child(2) { --index: 1; }
+.wheel__icon:nth-child(3) { --index: 2; }
+.wheel__icon:nth-child(4) { --index: 3; }
+.wheel__icon:nth-child(5) { --index: 4; }
+.wheel__icon:nth-child(6) { --index: 5; }
+
+/* Pointeur : triangle orange en haut, par-dessus le disque */
+.wheel__pointer {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    z-index: 1;
+    width: 32px;
+    height: 28px;
+    background: var(--color-brand);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    transform: translateX(-50%);
+}
+
+/* Moyeu central */
+.wheel__hub {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 22%;
+    aspect-ratio: 1;
+    border: 6px solid var(--color-brand);
+    border-radius: 50%;
+    background: var(--color-surface);
+    transform: translate(-50%, -50%);
+}
+
+
+/* Plat gagnant
+   -------------------------------------------------------------------------- */
+
+.random-draw__result {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.random-draw__result p {
+    margin: 0;
+}
+
+.random-draw__photo {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    border-radius: var(--radius-md);
+    object-fit: cover;
+}
+
+.random-draw__name {
+    margin: var(--space-xs) 0 0;
+}
+
+.random-draw__meta {
+    color: var(--color-text-muted);
+}
+
+.random-draw__price {
+    font-weight: var(--font-weight-black);
+}
+
+.random-draw__fallback {
+    display: inline-block;
+    margin-bottom: var(--space-md);
+}
+
+.random-draw__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-sm);
+    margin-top: var(--space-lg);
+}
+
+.random-draw__actions form {
+    margin: 0;
+}
+
+
+/* Ce qui s'affiche selon l'état de la fenêtre (data-state, posé par random.js)
+   -------------------------------------------------------------------------- */
+
+.random-draw:not([data-state="result"]) .random-draw__result,
+.random-draw[data-state="result"] .wheel,
+.random-draw[data-state="empty"] .wheel,
+.random-draw[data-state="error"] .wheel,
+.random-draw:not([data-state="error"]) .random-draw__fallback,
+.random-draw[data-state="spinning"] [data-random-retry] {
+    display: none;
+}
+
+
+/* Mouvement réduit (réglage du système) : pas de rotation, le résultat arrive directement
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .wheel__disc {
+        transition: none;
+    }
+}
