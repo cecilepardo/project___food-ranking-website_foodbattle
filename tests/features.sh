@@ -830,6 +830,12 @@ sql "UPDATE dishes SET category='pizza' WHERE id IN ($pizzas)" >/dev/null
 req rd GET /hasardXjson
 check "le point de /hasard.json n'est pas un joker : /hasardXjson => 404" [ "$CODE" = 404 ]
 
+req rd GET /
+check "roue : pastilles de catégorie dans la fenêtre (Tout + les 3 catégories)" \
+    [ "$(grep -c 'name="random-category"' <<<"$BODY")" -eq 4 ]
+check "… « Tout » cochée par défaut" has 'name="random-category" value="" checked'
+check "… une pastille par catégorie connue (pizza)" has 'name="random-category" value="pizza"'
+
 section "Page 500 (base de données coupée)"
 docker compose stop db >/dev/null 2>&1
 req ep GET /

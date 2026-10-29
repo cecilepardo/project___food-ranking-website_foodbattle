@@ -19,11 +19,22 @@ function setupRandomDraw() {
     var disc = dialog.querySelector('.wheel__disc');
     var status = dialog.querySelector('.random-draw__status');
     var retry = dialog.querySelector('[data-random-retry]');
+    var filter = dialog.querySelector('.random-draw__filter');
+    var fallback = dialog.querySelector('.random-draw__fallback');
     var categories = Array.prototype.map.call(dialog.querySelectorAll('.wheel__icon'), function (icon) {
         return icon.dataset.category;
     });
     var segmentAngle = 360 / categories.length;
     var rotation = 0;
+    var isDrawing = false;
+    var isRedrawWanted = false;   // catégorie changée pendant une rotation : on relance à la fin
+
+    // Catégorie choisie dans les pastilles ('' = tous les plats), au format attendu par le serveur
+    function categoryQuery() {
+        var checked = filter.querySelector('input:checked');
+
+        return checked && checked.value !== '' ? '?categorie=' + encodeURIComponent(checked.value) : '';
+    }
 
     function setState(state, message) {
         dialog.dataset.state = state;
@@ -64,12 +75,15 @@ function setupRandomDraw() {
 
     function draw() {
         var controller = new AbortController();
+        var query = categoryQuery();
         setTimeout(function () { controller.abort(); }, FETCH_TIMEOUT);
 
+        isDrawing = true;
         retry.disabled = true;
+        fallback.href = '/hasard' + query;   // le tirage de secours garde la catégorie choisie
         setState('spinning', 'Le destin hésite…');
 
-        fetch('/hasard.json', { signal: controller.signal, headers: { Accept: 'application/json' } })
+        fetch('/hasard.json' + query, { signal: controller.signal, headers: { Accept: 'application/json' } })
             .then(function (response) {
                 return response.json().then(function (data) {
                     if (response.status === 404) {
@@ -78,14 +92,25 @@ function setupRandomDraw() {
                     if (!response.ok || !data.winner) {
                         throw new Error('Réponse inattendue');
                     }
-                    return spinTo(data.winner.categoryKey).then(function () { showWinner(data.winner); });
+                    return spinTo(data.winner.categoryKey).then(function () {
+                        // Une autre catégorie a été choisie entre-temps : ce résultat n'est plus celui attendu
+                        if (!isRedrawWanted) {
+                            showWinner(data.winner);
+                        }
+                    });
                 });
             })
             .catch(function () {
                 setState('error', 'Le tirage n\'a pas pu se faire.');
             })
             .finally(function () {
+                isDrawing = false;
                 retry.disabled = false;
+
+                if (isRedrawWanted) {
+                    isRedrawWanted = false;
+                    draw();
+                }
             });
     }
 
@@ -95,6 +120,15 @@ function setupRandomDraw() {
         draw();
     });
     retry.addEventListener('click', draw);
+    // Le filtre reste actif pendant la rotation (le focus clavier n'est jamais perdu) :
+    // un changement de catégorie relance le tirage dès que la roue s'arrête.
+    filter.addEventListener('change', function () {
+        if (isDrawing) {
+            isRedrawWanted = true;
+            return;
+        }
+        draw();
+    });
 }
 
 setupRandomDraw();
