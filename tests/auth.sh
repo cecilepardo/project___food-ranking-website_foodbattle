@@ -98,6 +98,20 @@ check "email du nouveau compte => étape mot de passe" has 'Bon retour'
 password r2 "$NEW" motdepasse
 check "reconnexion => 302 vers /" [ "$CODE" = 302 -a "$LOC" = / ]
 
+section "Inscriptions simultanées du même email (double-clic)"
+DOUBLE="double-$RUN@test.fr"
+for i in 1 2 3 4; do step1 "dbl$i" "$DOUBLE"; token > "$DIR/dbl$i.token"; done
+codes=$(for i in 1 2 3 4; do
+    curl -s -o "$DIR/dbl$i.body" -w '%{http_code}\n' -b "$DIR/dbl$i" -c "$DIR/dbl$i" -X POST "$BASE/connexion/inscription" \
+        --data-urlencode "token=$(cat "$DIR/dbl$i.token")" --data-urlencode "email=$DOUBLE" \
+        --data-urlencode "nickname=Double$i$RUN" --data-urlencode "password=motdepasse" &
+done; wait)
+check "4 envois en même temps => aucune erreur 500" bash -c '! grep -q 500 <<<"$1"' _ "$codes"
+check "… un seul compte créé" [ "$(sql "SELECT count(*) FROM users WHERE email='$DOUBLE'")" = 1 ]
+check "… les autres envois affichent « Un compte existe déjà »" \
+    [ "$(grep -l 'Un compte existe déjà' "$DIR"/dbl?.body | wc -l)" -eq "$(grep -c 200 <<<"$codes")" ]
+sql "DELETE FROM users WHERE email='$DOUBLE'" >/dev/null
+
 section "Limitation par compte (niveau 2)"
 for i in 1 2 3 4 5; do step1 b user@foodbattle.local; password b user@foodbattle.local "faux-$i"; done
 check "5 mauvais mots de passe => toujours 'Mot de passe incorrect.'" has 'Mot de passe incorrect.'

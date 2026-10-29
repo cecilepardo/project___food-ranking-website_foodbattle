@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Core\Database;
+use PDOException;
 
 /**
  * Accès à la table "users" (comptes du site, rôles 'user' et 'admin').
  */
 class User
 {
+    /** Code SQLSTATE de PostgreSQL : valeur déjà présente dans une colonne UNIQUE. */
+    private const UNIQUE_VIOLATION = '23505';
+
     /**
      * Compte correspondant à cet email, ou null s'il n'existe pas.
      * L'email doit déjà être normalisé (trim + minuscules) par l'appelant.
@@ -49,15 +53,26 @@ class User
     /**
      * Crée un compte 'user' et renvoie son id.
      * Le rôle n'est volontairement pas un paramètre : impossible de créer un admin depuis le site.
+     *
+     * Renvoie null si l'email ou le pseudo vient d'être pris par une autre requête (ex. double-clic
+     * sur « Créer mon compte ») : la vérification faite juste avant ne suffit pas quand deux requêtes se croisent.
      */
-    public static function create(string $email, string $nickname, string $passwordHash): int
+    public static function create(string $email, string $nickname, string $passwordHash): ?int
     {
         $statement = Database::get()->prepare(
             'INSERT INTO users (email, nickname, password_hash)
              VALUES (?, ?, ?)
              RETURNING id'
         );
-        $statement->execute([$email, $nickname, $passwordHash]);
+
+        try {
+            $statement->execute([$email, $nickname, $passwordHash]);
+        } catch (PDOException $exception) {
+            if ($exception->getCode() === self::UNIQUE_VIOLATION) {
+                return null;
+            }
+            throw $exception;
+        }
 
         return (int) $statement->fetchColumn();
     }

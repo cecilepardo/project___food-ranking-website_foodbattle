@@ -127,6 +127,15 @@ class AuthController extends Controller
         }
 
         $userId = User::create($email, $nickname, Auth::hashPassword($password));
+
+        if ($userId === null) {
+            // Pris entre-temps par une autre requête : on affiche la même erreur qu'une vérification normale.
+            $error = $this->registrationError($email, $nickname, $password)
+                ?? ['field' => null, 'message' => 'Un compte existe déjà avec cet email.'];
+            $this->showRegisterForm($email, $nickname, $error['message'], $error['field']);
+            return;
+        }
+
         $this->forgiveSuccessfulAttempt($email);
 
         // Connexion directe après l'inscription : le compte vient d'être créé avec le rôle par défaut.
