@@ -14,6 +14,7 @@
  * @var bool        $deleted  true après la suppression d'un plat
  */
 
+use App\Core\DishPhoto;
 use App\Core\View;
 ?>
 <?= View::partial('admin-nav') ?>
@@ -126,11 +127,13 @@ use App\Core\View;
             <textarea name="description"></textarea>
         </label>
 
-        <label>
-            Photo (facultative)
-            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" aria-describedby="photo-hint">
+        <?php /* Aide au-dessus du champ (taille maximale visible avant de choisir) ; app.js signale un fichier trop lourd */ ?>
+        <div class="form-field">
+            <label for="photo">Photo (facultative)</label>
             <small id="photo-hint">JPEG, PNG ou WebP, 2 Mo maximum. Sans photo, le plat prend celle de sa catégorie.</small>
-        </label>
+            <input id="photo" type="file" name="photo" accept="image/jpeg,image/png,image/webp" aria-describedby="photo-hint"
+                   data-max-bytes="<?= DishPhoto::MAX_BYTES ?>" data-too-big="La photo dépasse 2 Mo : choisis une image plus légère.">
+        </div>
 
         <button class="btn">Ajouter</button>
     </form>

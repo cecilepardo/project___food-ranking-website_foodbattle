@@ -8,6 +8,7 @@
 declare(strict_types=1);
 
 use App\Core\ErrorHandler;
+use App\Core\Response;
 use App\Core\Router;
 
 define('APP_ROOT', dirname(__DIR__));
@@ -62,6 +63,12 @@ session_set_cookie_params([
 // Refuse un identifiant de session inventé par le navigateur (complète session_regenerate_id).
 ini_set('session.use_strict_mode', '1');
 session_start();
+
+// Envoi trop lourd pour PHP (au-delà de post_max_size, 8 Mo) : PHP vide alors tout le formulaire,
+// jeton CSRF compris. Plutôt qu'un « Requête refusée » incompréhensible, on dit ce qui se passe.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST === [] && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+    Response::abort(413, 'Le fichier envoyé est trop lourd. Une photo ne doit pas dépasser 2 Mo.');
+}
 
 $router = new Router();
 $registerRoutes = require APP_ROOT . '/config/routes.php';

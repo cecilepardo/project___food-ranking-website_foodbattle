@@ -106,7 +106,8 @@ DB_PASSWORD=<secret de 32 caractères ou plus, ex. : openssl rand -base64 32>
 ```
 
 À ajouter à `.gitignore` : `.env.prod`. À ajouter à `.dockerignore` : `tests/`, `docs/`, `.env.prod`
-(inutiles ou sensibles dans l'image).
+(inutiles ou sensibles dans l'image). `public/uploads/` y est déjà : les photos d'un poste de développement
+ne partent pas dans l'image.
 
 ### 3.2 `config.php` : pas de mot de passe par défaut en production
 
@@ -373,5 +374,7 @@ sur une installation locale.
 - **Pas d'envoi d'email** : pas de mot de passe oublié. Un admin peut remettre un mot de passe en base.
 - **Photos envoyées** (#47) : pas de redimensionnement ni de remplacement de la photo d'un plat existant
   (la page Modifier ne gère que le nom et le prix).
+- **Métadonnées des photos envoyées** : elles sont gardées telles quelles, y compris la position GPS
+  d'une photo prise au téléphone. Les retirer demande de réencoder l'image (extension PHP GD, non installée).
 - **Énumération des emails** : l'étape 1 de la connexion indique si un email a un compte. Choix d'ergonomie
   (connexion et inscription dans un seul formulaire), limité par les 20 tentatives par IP.

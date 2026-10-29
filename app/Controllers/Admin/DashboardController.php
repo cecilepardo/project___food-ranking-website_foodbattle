@@ -51,6 +51,10 @@ class DashboardController extends Controller
 
         $dishId = Dish::create($establishmentId, $name, $category, $description, $price);
 
+        // Une photo restée d'un ancien plat au même numéro (base remise à zéro, sauvegarde restaurée)
+        // ne doit pas s'afficher sur ce nouveau plat.
+        DishPhoto::delete($dishId);
+
         // Le plat existe déjà : on le garde, mais on prévient que sa photo n'a pas suivi.
         if (!DishPhoto::save($dishId, $photo)) {
             $this->redirect('/dashboard?added=1&photo=erreur');
