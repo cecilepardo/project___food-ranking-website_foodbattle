@@ -4,6 +4,7 @@
  *
  * @var string      $email
  * @var string|null $error
+ * @var bool        $invalid  true si le mot de passe saisi est faux (pas après un blocage 429)
  */
 ?>
 <h1>Bon retour !</h1>
@@ -14,7 +15,7 @@
 </p>
 
 <?php if ($error): ?>
-    <p class="message message--error" role="alert"><?= e($error) ?></p>
+    <p class="message message--error" id="form-error" role="alert"><?= e($error) ?></p>
 <?php endif; ?>
 
 <form class="form-panel" method="post" action="/connexion/mot-de-passe">
@@ -26,7 +27,7 @@
     <div class="form-field">
         <label for="password">Mot de passe</label>
         <div class="password-field">
-            <input id="password" class="password-field__input" name="password" type="password" autocomplete="current-password" required autofocus>
+            <input id="password" class="password-field__input" name="password" type="password" autocomplete="current-password" required autofocus<?= field_attrs($invalid) ?>>
 
             <?php /* Caché sans JavaScript : app.js l'affiche et le fait fonctionner. */ ?>
             <button class="password-field__toggle" type="button" aria-controls="password" aria-pressed="false" data-password-toggle hidden>

@@ -37,6 +37,8 @@ use App\Core\View;
 <?php endif; ?>
 
 
+<?php /* Visible sur mobile seulement, devant les pilules de tri (les lecteurs d'écran ont déjà aria-sort) */ ?>
+<p class="sort-label" aria-hidden="true">Trier par</p>
 <table class="table table--cards table--sortable">
     <thead>
         <tr>
@@ -58,10 +60,10 @@ use App\Core\View;
                 <td data-label="Prix"><?= euro($dish['price']) ?></td>
                 <td>
                     <div class="table__actions">
-                        <a class="btn btn--small btn--secondary" href="/dashboard/plats/<?= (int) $dish['id'] ?>/modifier">Modifier</a>
+                        <a class="btn btn--small btn--secondary" href="/dashboard/plats/<?= (int) $dish['id'] ?>/modifier">Modifier<span class="visually-hidden"> <?= e($dish['name']) ?></span></a>
                         <form class="inline-form" method="post" action="/dashboard/plats/<?= (int) $dish['id'] ?>/supprimer" data-delete>
                             <?= csrf_field() ?>
-                            <button class="btn btn--small btn--danger">Supprimer</button>
+                            <button class="btn btn--small btn--danger">Supprimer<span class="visually-hidden"> <?= e($dish['name']) ?></span></button>
                         </form>
                     </div>
                 </td>

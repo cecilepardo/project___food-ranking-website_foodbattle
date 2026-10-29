@@ -16,4 +16,8 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 RUN sed -ri -e 's!^ServerTokens .*!ServerTokens Prod!' /etc/apache2/conf-available/security.conf \
     && echo 'expose_php = Off' > /usr/local/etc/php/conf.d/security.ini
 
+# En développement : PHP relit un fichier modifié dès la requête suivante
+# (par défaut, OPcache garde l'ancienne version jusqu'à 2 s, de quoi faire échouer un test lancé juste après)
+RUN echo 'opcache.revalidate_freq = 0' > /usr/local/etc/php/conf.d/opcache-dev.ini
+
 COPY . /var/www/html/

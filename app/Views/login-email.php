@@ -11,7 +11,7 @@
 <p>Saisis ton email : on te connecte si tu as déjà un compte, sinon on t'aide à en créer un.</p>
 
 <?php if ($error): ?>
-    <p class="message message--error" role="alert"><?= e($error) ?></p>
+    <p class="message message--error" id="form-error" role="alert"><?= e($error) ?></p>
 <?php endif; ?>
 
 <form class="form-panel" method="post" action="/connexion">
@@ -19,7 +19,7 @@
 
     <label>
         Email
-        <input name="email" type="email" value="<?= e($email) ?>" maxlength="254" autocomplete="email" required autofocus>
+        <input name="email" type="email" value="<?= e($email) ?>" maxlength="254" autocomplete="email" required autofocus<?= field_attrs($error !== null) ?>>
     </label>
 
     <button class="btn">Continuer</button>

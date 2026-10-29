@@ -54,6 +54,7 @@ class Auth
         // Nouvel identifiant de session : un identifiant connu d'un attaquant avant
         // la connexion devient inutilisable (protection contre la fixation de session).
         session_regenerate_id(true);
+        Csrf::regenerate();
 
         $_SESSION[self::SESSION_KEY] = [
             'id'       => (int) $user['id'],

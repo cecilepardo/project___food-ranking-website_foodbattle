@@ -42,6 +42,12 @@ ErrorHandler::register($config['env'] === 'dev');
 // et empêche le navigateur de deviner un autre type de contenu que celui annoncé.
 header('X-Frame-Options: DENY');
 header('X-Content-Type-Options: nosniff');
+// Politique de sécurité du contenu : le navigateur ne charge que nos propres fichiers
+// (photos comprises). Un script injecté malgré l'échappement ne s'exécuterait pas.
+header("Content-Security-Policy: default-src 'self'; "
+    . "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
+// Les autres sites ne voient pas d'où viennent nos visiteurs (ex. /dashboard/plats/3/modifier).
+header('Referrer-Policy: same-origin');
 
 array_walk_recursive($_GET, 'reject_invalid_utf8');
 array_walk_recursive($_POST, 'reject_invalid_utf8');

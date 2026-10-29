@@ -19,7 +19,7 @@ $count = count($dishes);
         <p class="hero__text">Explore les spots du quartier, note les plats et vote pour ton favori.</p>
 
         <div class="hero__actions">
-            <a class="btn" href="/classement">Voir le classement →</a>
+            <a class="btn" href="/classement">Voir le classement <span aria-hidden="true">→</span></a>
             <?php if (!Auth::check()): ?>
                 <a class="btn btn--secondary" href="/connexion">Créer un compte</a>
             <?php endif; ?>

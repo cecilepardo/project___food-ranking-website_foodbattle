@@ -22,8 +22,8 @@
     </p>
     <p>
         <strong>Contenus :</strong> les établissements, plats, votes et avis de démonstration sont fictifs.
-        Les photographies d'illustration proviennent de <a href="https://www.pexels.com/fr-fr/licence/">Pexels</a>
-        et sont utilisées selon leur licence.
+        Les photographies d'illustration proviennent de <a href="https://www.foodiesfeed.com/license">Foodiesfeed</a>
+        (licence CC0, libre de droits) et sont hébergées sur le site.
     </p>
 
     <h2 id="donnees-personnelles">Données personnelles (RGPD)</h2>
@@ -81,7 +81,7 @@
         Le site n'utilise aucun cookie publicitaire ni de mesure d'audience.
     </p>
     <p>
-        Les photographies sont chargées depuis les serveurs de Pexels : votre navigateur leur transmet donc
-        votre adresse IP, comme pour toute image hébergée ailleurs.
+        Toutes les ressources (images, styles, scripts) sont servies par le site lui-même :
+        votre navigateur ne contacte aucun service tiers.
     </p>
 </article>

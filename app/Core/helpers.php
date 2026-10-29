@@ -39,18 +39,31 @@ function csrf_field(): string
 }
 
 /**
- * Photo d'illustration selon la catégorie du plat.
+ * Attributs ARIA d'un champ de formulaire : en erreur, il est signalé invalide et relié au message
+ * (<p id="form-error">) ; $hintId relie en plus une aide permanente (ex. « 8 caractères minimum »).
  */
-function image_for(string $category): string
+function field_attrs(bool $isInvalid, string $hintId = ''): string
 {
-    $photoIds = [
-        'burger' => '1639557',
-        'tacos'  => '4958792',
-        'pizza'  => '315755',
-    ];
-    $id = $photoIds[$category] ?? $photoIds['burger'];
+    $describedBy = trim(($isInvalid ? 'form-error ' : '') . $hintId);
 
-    return "https://images.pexels.com/photos/{$id}/pexels-photo-{$id}.jpeg?auto=compress&cs=tinysrgb&w=800";
+    return ($isInvalid ? ' aria-invalid="true"' : '')
+        . ($describedBy !== '' ? ' aria-describedby="' . e($describedBy) . '"' : '');
+}
+
+/**
+ * Photo d'illustration d'un plat (Foodiesfeed, licence CC0), servie depuis public/assets/img/plats/.
+ * Chaque plat de démonstration a sa photo ({id}.webp) ; un plat ajouté ensuite prend celle de sa catégorie.
+ */
+function image_for(array $dish): string
+{
+    $ownPhoto = '/assets/img/plats/' . (int) $dish['id'] . '.webp';
+    if (is_file(APP_ROOT . '/public' . $ownPhoto)) {
+        return $ownPhoto;
+    }
+
+    $category = isset(\App\Models\Dish::CATEGORIES[$dish['category']]) ? $dish['category'] : 'burger';
+
+    return '/assets/img/plats/' . $category . '.webp';
 }
 
 /**

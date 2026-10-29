@@ -513,6 +513,39 @@ for path in /dashboard /moderation /dashboard/plats/1/modifier; do
     check "admin GET $path => X-Frame-Options: DENY et X-Content-Type-Options: nosniff" security_headers
 done
 
+section "Sécurité : CSP, Referrer-Policy, jeton CSRF renouvelé, rôle admin relu en base"
+csp_headers() {
+    grep -qi "^content-security-policy: default-src 'self'; object-src 'none'" "$DIR/headers" \
+        && grep -qi '^referrer-policy: same-origin' "$DIR/headers"
+}
+req csp GET /
+check "page normale => Content-Security-Policy et Referrer-Policy" csp_headers
+req csp GET /page-inexistante
+check "page 404 => mêmes en-têtes" csp_headers
+req csp GET /dashboard
+check "redirection (visiteur sur /dashboard) => mêmes en-têtes" csp_headers
+
+# Jeton obtenu en visiteur, puis connexion : l'ancien jeton ne doit plus être accepté
+req tok GET /connexion; old_token=$(token)
+login tok user@foodbattle.local foodbattle-user
+req tok POST /theme --data-urlencode "token=$old_token" --data "back=/"
+check "jeton CSRF d'avant la connexion => refusé (403)" [ "$CODE" = 403 ]
+req tok GET /; new_token=$(token)
+req tok POST /theme --data-urlencode "token=$new_token" --data "back=/"
+check "… le nouveau jeton fonctionne (302)" [ "$CODE" = 302 ]
+check "… et c'est bien un autre jeton" [ -n "$new_token" -a "$new_token" != "$old_token" ]
+
+# Admin de test (mot de passe : motdepasse), rétrogradé pendant qu'il est connecté
+hash=$(docker compose exec -T app php -r 'echo password_hash("motdepasse", PASSWORD_DEFAULT);')
+sql "INSERT INTO users (email, nickname, password_hash, role) VALUES ('demote-$RUN@test.fr', 'Demote$RUN', '$hash', 'admin')" >/dev/null
+login dem "demote-$RUN@test.fr" motdepasse
+req dem GET /dashboard
+check "admin de test => /dashboard accessible (200)" [ "$CODE" = 200 ]
+sql "UPDATE users SET role = 'user' WHERE email = 'demote-$RUN@test.fr'" >/dev/null
+req dem GET /dashboard
+check "rétrogradé en base, toujours connecté => /dashboard refusé (403)" [ "$CODE" = 403 ]
+sql "DELETE FROM users WHERE email = 'demote-$RUN@test.fr'" >/dev/null
+
 section "Menu de l'administration (pages Plats, Établissements, Modération)"
 req navv GET /dashboard/etablissements
 check "visiteur GET /dashboard/etablissements => 302 vers /connexion" [ "$CODE" = 302 -a "$LOC" = /connexion ]
@@ -566,7 +599,22 @@ check "ajout d'un plat au nom de 121 caractères => refusé" has 'Vérifie les c
 req pb GET "/dashboard/plats/$PB/modifier"; t=$(token)
 req pb POST "/dashboard/plats/$PB/modifier" --data-urlencode "token=$t" --data "name=${E61}+bis+$RUN" --data price=6
 check "modification avec un nom de 76 caractères accentués => acceptée" [ "$(sql "SELECT char_length(name) FROM dishes WHERE id=$PB")" = $((61 + 5 + ${#RUN})) ]
+
+section "Photos des plats (servies par le site)"
+req ph GET "/plat/$PB"
+check "plat ajouté sans photo => photo de sa catégorie (burger.webp)" has 'src="/assets/img/plats/burger.webp"'
 sql "DELETE FROM dishes WHERE name LIKE '%$RUN'" >/dev/null
+req ph GET /
+check "accueil : chaque plat de démo a sa propre photo (12 photos différentes)" \
+    [ "$(grep -oE 'src="/assets/img/plats/[0-9]+\.webp"' <<<"$BODY" | sort -u | wc -l)" = 12 ]
+check "… aucune image chargée depuis un site extérieur" hasnt 'src="https://'
+req ph GET /plat/5
+check "fiche plat : photo du plat (5.webp)" has 'src="/assets/img/plats/5.webp"'
+missing=0
+for f in burger tacos pizza {1..12}; do
+    [ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/assets/img/plats/$f.webp")" = 200 ] || missing=$((missing + 1))
+done
+check "les 15 fichiers photo répondent 200" [ "$missing" = 0 ]
 
 section "Bouton thème : retour vers une page qui existe"
 req th GET "/classement"
@@ -625,6 +673,49 @@ check "… et dans le titre de la page" has '<h1>Modifier Le Double Smash</h1>'
 req anon GET /classement
 check "classement : tableau en cartes sur mobile (pas de défilement horizontal à 320 px)" \
     bash -c 'grep -q "class=\"table table--cards\"" <<<"$1" && grep -q "data-label=\"Plat\"" <<<"$1"' _ "$BODY"
+req a11y GET /dashboard
+check "dashboard : « Supprimer » complété du nom du plat pour les lecteurs d'écran" \
+    has 'Supprimer<span class="visually-hidden"> Le Double Smash</span>'
+check "… et « Modifier » aussi" has 'Modifier<span class="visually-hidden"> Le Double Smash</span>'
+check "dashboard : libellé « Trier par » des pilules de tri (mobile)" has '<p class="sort-label" aria-hidden="true">Trier par</p>'
+req a11y GET /moderation
+check "modération : boutons complétés par « l'avis de … sur … »" has "<span class=\"visually-hidden\"> l&#039;avis de "
+req anon GET /
+check "accueil : bouton des cartes retiré du parcours clavier (le titre est déjà un lien)" \
+    has 'card__action" href="/plat/[0-9]*" tabindex="-1" aria-hidden="true"'
+check "accueil : flèche « → » masquée aux lecteurs d'écran" has 'Voir le classement <span aria-hidden="true">→</span>'
+req anon GET /plat/1
+check "fiche plat : restaurant et prix ne sont plus des titres (aucun <h3>)" hasnt '<h3'
+check "… le restaurant n'est plus un <h2>" has '<p class="dish-detail__restaurant">'
+check "fiche plat : « ♥ » et « ← » masqués aux lecteurs d'écran" \
+    bash -c 'grep -q "<span aria-hidden=\"true\">♥</span>" <<<"$1" && grep -q "<span aria-hidden=\"true\">←</span>" <<<"$1"' _ "$BODY"
+
+section "Accessibilité : erreurs reliées à leur champ"
+INVALID='aria-invalid="true" aria-describedby="form-error"'
+step1 err-e pas-un-email
+check "email invalide => champ email signalé invalide et relié au message" has "autocomplete=\"email\" required autofocus $INVALID>"
+check "… message d'erreur avec id=\"form-error\"" has 'id="form-error" role="alert"'
+req err-ok GET /connexion
+check "sans erreur => aucun champ signalé invalide" hasnt 'aria-invalid'
+step1 err-p user@foodbattle.local; password err-p user@foodbattle.local faux
+check "mot de passe faux => champ mot de passe signalé invalide" has "autocomplete=\"current-password\" required autofocus $INVALID>"
+for i in 1 2 3 4 5; do sql "INSERT INTO rate_limit_hits (key) VALUES ('login:user@foodbattle.local')" >/dev/null; done
+step1 err-b user@foodbattle.local; password err-b user@foodbattle.local faux
+check "compte bloqué => 429" [ "$CODE" = 429 ]
+check "… le mot de passe n'est pas en cause : champ non signalé invalide" hasnt 'aria-invalid'
+sql "DELETE FROM rate_limit_hits" >/dev/null
+taken=$(sql "SELECT nickname FROM users WHERE email='user@foodbattle.local'")
+step1 err-r "err-$RUN@test.fr"; register err-r "err-$RUN@test.fr" "$taken" motdepasse
+check "pseudo déjà pris => pseudo signalé invalide, relié au message et à son aide" \
+    has 'aria-invalid="true" aria-describedby="form-error nickname-hint"'
+check "… mot de passe non signalé, mais toujours relié à son aide" has 'autocomplete="new-password" required aria-describedby="password-hint">'
+step1 err-r2 "err2-$RUN@test.fr"; register err-r2 "err2-$RUN@test.fr" "Err$RUN" court
+check "mot de passe trop court => mot de passe signalé invalide, pas le pseudo" \
+    bash -c 'grep -q "aria-describedby=\"form-error password-hint\"" <<<"$1" && grep -q "aria-describedby=\"nickname-hint\">" <<<"$1"' _ "$BODY"
+login err-a user@foodbattle.local foodbattle-user
+req err-a GET /plat/2; t=$(token)
+req err-a POST /plat/2/avis --data-urlencode "token=$t" --data "score=4" --data-urlencode $'comment=Caract\x01re interdit'
+check "avis refusé => commentaire signalé invalide" has "required $INVALID>"
 
 section "Page 500 (base de données coupée)"
 docker compose stop db >/dev/null 2>&1
