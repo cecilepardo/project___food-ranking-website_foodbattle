@@ -12,10 +12,12 @@ spl_autoload_register(function (string $class): void {
 });
 
 $_SESSION = [];
-$cases = ['/moderation?page=2', '//pirate.com', '/\\pirate.com', 'https://pirate.com', 'javascript:alert(1)', ''];
+$cases = ['/moderation?page=2', '//pirate.com', '/\\pirate.com', 'https://pirate.com', 'javascript:alert(1)', '', "/\t/pirate.com", "/\n/pirate.com"];
 
 foreach ($cases as $url) {
     \App\Core\Auth::rememberIntendedUrl($url);
     $kept = \App\Core\Auth::pullIntendedUrl();
-    echo str_pad($url === '' ? '(vide)' : $url, 22), ' => ', $kept === null ? 'refusé' : "accepté ($kept)", PHP_EOL;
+    // Tabulation et retour à la ligne affichés \t et \n pour rester sur une ligne
+    $label = $url === '' ? '(vide)' : str_replace(["\t", "\n"], ['\t', '\n'], $url);
+    echo str_pad($label, 22), ' => ', $kept === null ? 'refusé' : "accepté ($kept)", PHP_EOL;
 }
