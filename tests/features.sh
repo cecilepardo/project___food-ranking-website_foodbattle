@@ -546,6 +546,16 @@ req dem GET /dashboard
 check "rétrogradé en base, toujours connecté => /dashboard refusé (403)" [ "$CODE" = 403 ]
 sql "DELETE FROM users WHERE email = 'demote-$RUN@test.fr'" >/dev/null
 
+# Compte supprimé en base pendant que sa session est ouverte
+step1 gone "gone-$RUN@test.fr"; register gone "gone-$RUN@test.fr" "Gone$RUN" motdepasse
+req gone GET /plat/1; t=$(token)
+sql "DELETE FROM users WHERE email = 'gone-$RUN@test.fr'" >/dev/null
+req gone POST /plat/1/vote --data-urlencode "token=$t"
+check "compte supprimé, session ouverte : vote => renvoyé vers /connexion (plus d'erreur 500)" [ "$CODE" = 302 -a "$LOC" = /connexion ]
+check "… aucun vote enregistré au nom d'un compte disparu" [ "$(sql "SELECT count(*) FROM votes WHERE user_id IS NULL")" = 0 ]
+req gone GET /
+check "… et il est déconnecté (bouton Connexion dans l'en-tête)" has 'href="/connexion"'
+
 section "Menu de l'administration (pages Plats, Établissements, Modération)"
 req navv GET /dashboard/etablissements
 check "visiteur GET /dashboard/etablissements => 302 vers /connexion" [ "$CODE" = 302 -a "$LOC" = /connexion ]
