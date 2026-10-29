@@ -13,6 +13,11 @@ Le Figma sert de référence visuelle. Les valeurs réellement utilisées par le
 `theme-dark.css` et `theme-light.css`.
 Si l'un change, on met l'autre à jour.
 
+## Documentation
+
+- [Installer et lancer en local](docs/INSTALLATION.md) : prérequis, commandes, comptes de démo, tests, dépannage
+- [Mettre en production](docs/MISE-EN-PROD.md) : ce qui change, configuration proposée, déploiement, sauvegardes, vérifications
+
 ## Lancer le projet
 
 ```
