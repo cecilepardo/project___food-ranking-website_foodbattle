@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\Core\Controller;
 use App\Core\DishPhoto;
+use App\Core\Validator;
 use App\Models\Dish;
 
 /**
@@ -35,8 +36,8 @@ class DishController extends Controller
         $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT);
         $price = is_float($price) ? round($price, 2) : $price;
 
-        $isValid = $name !== ''
-            && mb_strlen($name) <= 120
+        $isValid = mb_strlen($name) <= 120
+            && Validator::isCleanText($name) // au moins un caractère visible, rien d'invisible
             && $price !== false
             && $price !== null
             && $price >= 0
