@@ -31,8 +31,7 @@ class DashboardController extends Controller
         $this->checkCsrf();
 
         $name            = trim($this->postString('name'));
-        $price           = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT);
-        $price           = is_float($price) ? round($price, 2) : $price;
+        $price           = $this->postPrice();
         $establishmentId = filter_input(INPUT_POST, 'establishment_id', FILTER_VALIDATE_INT);
         $category        = $this->postString('category');
         $description     = trim($this->postString('description'));
@@ -87,20 +86,14 @@ class DashboardController extends Controller
     }
 
     /**
-     * Nom : 120 caractères maximum (VARCHAR(120)) et au moins un caractère visible.
      * Description facultative : 1000 caractères maximum (comme un avis), sans caractère invisible piégeant.
      */
-    private function isValidDish(string $name, mixed $price, string $category, mixed $establishmentId, string $description): bool
+    private function isValidDish(string $name, float|false|null $price, string $category, mixed $establishmentId, string $description): bool
     {
-        $establishmentIds = array_column(Establishment::all(), 'id');
-
-        $nameIsValid          = mb_strlen($name) <= 120 && Validator::isCleanText($name);
-        $priceIsValid         = $price !== false && $price !== null && $price >= 0 && $price <= Dish::MAX_PRICE;
-        $categoryIsValid      = array_key_exists($category, Dish::CATEGORIES);
-        $establishmentIsValid = in_array($establishmentId, $establishmentIds);
-        $descriptionIsValid   = $description === ''
-            || (mb_strlen($description) <= 1000 && Validator::isCleanText($description));
-
-        return $nameIsValid && $priceIsValid && $categoryIsValid && $establishmentIsValid && $descriptionIsValid;
+        return Validator::isDishName($name)
+            && Validator::isPrice($price)
+            && array_key_exists($category, Dish::CATEGORIES)
+            && in_array($establishmentId, array_column(Establishment::all(), 'id'))
+            && ($description === '' || Validator::isCleanText($description, 1000));
     }
 }

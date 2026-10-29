@@ -13,18 +13,17 @@
  * @var mixed      $ratingScore   Note saisie avant le refus (null sinon)
  * @var string     $ratingComment Commentaire saisi avant le refus ('' sinon)
  */
-use App\Core\View;
-
 $dishId = (int) $dish['id'];
-$votes  = (int) $dish['votes'];
-
-// "4,6/5" ou "—" si personne n'a encore noté le plat (comme sur les cartes de l'accueil)
-$rating = $dish['average'] ? score($dish['average']) . '/5' : '—';
 ?>
 <p><a href="/"><span aria-hidden="true">←</span> Tous les plats</a></p>
 
 <section class="dish-detail">
-    <?= View::partial('dish-photo', ['dish' => $dish]) ?>
+    <img
+        class="dish-detail__image"
+        src="<?= e(image_for($dish)) ?>"
+        alt="Photo d’illustration : <?= e($dish['category']) ?>"
+        data-fallback="/assets/img/placeholder.svg"
+    >
 
     <div class="dish-detail__body">
         <span class="tag"><?= e($dish['category']) ?></span>
@@ -36,7 +35,7 @@ $rating = $dish['average'] ? score($dish['average']) . '/5' : '—';
         <p class="dish-detail__rating">
             <!-- L'étoile est décorative : un lecteur d'écran lirait "étoile noire" -->
             <span aria-hidden="true">★</span>
-            <?= e($rating) ?> · <?= $votes ?> <?= $votes > 1 ? 'votes' : 'vote' ?>
+            <?= e(rating_summary($dish)) ?>
         </p>
 
         <?php if ($currentUser): ?>

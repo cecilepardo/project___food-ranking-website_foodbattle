@@ -58,6 +58,16 @@ abstract class Controller
         return self::stringOrEmpty($_GET[$key] ?? '');
     }
 
+    /**
+     * Prix envoyé par un formulaire, arrondi au centime ; false s'il n'est pas un nombre, null s'il est absent.
+     */
+    protected function postPrice(): float|false|null
+    {
+        $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT);
+
+        return is_float($price) ? round($price, 2) : $price;
+    }
+
     private static function stringOrEmpty(mixed $value): string
     {
         return is_string($value) ? $value : '';

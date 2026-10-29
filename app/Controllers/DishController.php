@@ -75,7 +75,7 @@ class DishController extends Controller
             $this->redirect('/plat/' . $id . '?deja=1');
         }
 
-        $this->redirectToDish($id);
+        $this->redirect('/plat/' . $id . '?ok=1');
     }
 
     /**
@@ -103,10 +103,7 @@ class DishController extends Controller
 
     private function isValidRating(mixed $score, string $comment): bool
     {
-        $scoreIsValid   = is_int($score) && $score >= 1 && $score <= 5;
-        $commentIsValid = mb_strlen($comment) <= 1000 && Validator::isCleanText($comment);
-
-        return $scoreIsValid && $commentIsValid;
+        return is_int($score) && $score >= 1 && $score <= 5 && Validator::isCleanText($comment, 1000);
     }
 
     /**
@@ -129,10 +126,5 @@ class DishController extends Controller
         if (!Dish::exists($id)) {
             $this->abort(404, 'Plat introuvable.');
         }
-    }
-
-    private function redirectToDish(int $id): never
-    {
-        $this->redirect('/plat/' . $id . '?ok=1');
     }
 }
