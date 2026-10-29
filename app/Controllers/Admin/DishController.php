@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Core\Controller;
+use App\Core\DishPhoto;
 use App\Models\Dish;
 
 /**
@@ -60,6 +61,7 @@ class DishController extends Controller
         $this->findOrFail($id);
 
         Dish::delete($id);
+        DishPhoto::delete($id);
 
         $this->redirect('/dashboard?deleted=1');
     }

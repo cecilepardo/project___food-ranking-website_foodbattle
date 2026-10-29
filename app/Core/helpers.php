@@ -51,19 +51,12 @@ function field_attrs(bool $isInvalid, string $hintId = ''): string
 }
 
 /**
- * Photo d'illustration d'un plat (Foodiesfeed, licence CC0), servie depuis public/assets/img/plats/.
- * Chaque plat de démonstration a sa photo ({id}.webp) ; un plat ajouté ensuite prend celle de sa catégorie.
+ * Photo d'un plat : celle envoyée par l'admin, sinon celle du plat de démo, sinon celle de sa catégorie.
+ * Voir App\Core\DishPhoto.
  */
 function image_for(array $dish): string
 {
-    $ownPhoto = '/assets/img/plats/' . (int) $dish['id'] . '.webp';
-    if (is_file(APP_ROOT . '/public' . $ownPhoto)) {
-        return $ownPhoto;
-    }
-
-    $category = isset(\App\Models\Dish::CATEGORIES[$dish['category']]) ? $dish['category'] : 'burger';
-
-    return '/assets/img/plats/' . $category . '.webp';
+    return \App\Core\DishPhoto::url($dish);
 }
 
 /**
