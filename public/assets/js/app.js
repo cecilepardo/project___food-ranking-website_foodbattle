@@ -102,7 +102,25 @@ function setupPasswordToggles() {
     });
 }
 
+/**
+ * Champ fichier avec taille maximale (data-max-bytes) : un fichier trop lourd est signalé dès qu'il est choisi,
+ * par l'infobulle du navigateur (message dans data-too-big), et le formulaire ne part pas.
+ * Évite d'envoyer plusieurs Mo pour rien ; le serveur revérifie de toute façon.
+ */
+function setupFileSizeLimits() {
+    document.querySelectorAll('input[type="file"][data-max-bytes]').forEach(function (input) {
+        input.addEventListener('change', function () {
+            var file = input.files[0];
+            var isTooBig = file !== undefined && file.size > Number(input.dataset.maxBytes);
+
+            input.setCustomValidity(isTooBig ? input.dataset.tooBig : '');
+            input.reportValidity();
+        });
+    });
+}
+
 setupImageFallbacks();
 setupDeleteButtons();
 setupArrowSteps();
 setupPasswordToggles();
+setupFileSizeLimits();

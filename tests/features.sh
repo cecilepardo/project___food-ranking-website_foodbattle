@@ -627,7 +627,7 @@ check "plat ajouté sans photo => photo de sa catégorie (burger.webp)" has 'src
 sql "DELETE FROM dishes WHERE name LIKE '%$RUN'" >/dev/null
 req ph GET /
 check "accueil : chaque plat de démo a sa propre photo (12 photos différentes)" \
-    [ "$(grep -oE 'src="/assets/img/plats/[0-9]+\.webp"' <<<"$BODY" | sort -u | wc -l)" = 12 ]
+    [ "$(grep -oE 'src="/assets/img/plats/[0-9]+\.webp"' <<<"$BODY" | sort -u | wc -l)" -eq 12 ]   # -eq : wc -l ajoute des espaces sur macOS
 check "… aucune image chargée depuis un site extérieur" hasnt 'src="https://'
 req ph GET /plat/5
 check "fiche plat : photo du plat (5.webp)" has 'src="/assets/img/plats/5.webp"'
@@ -662,6 +662,23 @@ req up GET /dashboard; t=$(token)
 req up POST "/dashboard/plats/$UP/supprimer" --data-urlencode "token=$t"
 check "suppression du plat => sa photo est supprimée aussi" \
     [ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/uploads/plats/$UP.png")" = 404 ]
+req up GET /dashboard
+check "champ photo : taille maximale lue par app.js (data-max-bytes = 2 Mo)" has 'data-max-bytes="2097152"'
+check "… aide au-dessus du champ, hors du <label> (lue une seule fois)" has '<label for="photo">Photo (facultative)</label>'
+# Au-delà de post_max_size (8 Mo), PHP vide tout le formulaire, jeton CSRF compris
+head -c 9000000 /dev/zero > "$DIR/enorme.jpg"
+add_dish "Enorme" "$DIR/enorme.jpg"
+check "envoi de 9 Mo => message « trop lourd » au lieu de « Requête refusée »" \
+    bash -c 'grep -q "Une photo ne doit pas dépasser 2 Mo." <<<"$1" && ! grep -q "Requête refusée" <<<"$1"' _ "$BODY"
+check "… aucun plat créé" [ "$(sql "SELECT count(*) FROM dishes WHERE name = 'Enorme $RUN'")" = 0 ]
+# Photo restée d'un ancien plat au numéro que va prendre le prochain plat (base remise à zéro…)
+NEXT=$(sql "SELECT last_value + CASE WHEN is_called THEN 1 ELSE 0 END FROM dishes_id_seq")
+mkdir -p public/uploads/plats && cp "$DIR/photo.png" "public/uploads/plats/$NEXT.png"
+add_dish "Sans photo"
+check "nouveau plat n°$NEXT sans photo => l'ancienne photo n°$NEXT est supprimée" [ ! -e "public/uploads/plats/$NEXT.png" ]
+req up GET "/plat/$NEXT"
+check "… sa fiche affiche la photo de sa catégorie" has 'src="/assets/img/plats/pizza.webp"'
+sql "DELETE FROM dishes WHERE id = $NEXT" >/dev/null
 
 section "Bouton thème : retour vers une page qui existe"
 req th GET "/classement"

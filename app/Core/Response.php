@@ -38,6 +38,7 @@ class Response
         404 => 'Page introuvable',
         405 => 'Action impossible',
         422 => 'Saisie invalide',
+        413 => 'Fichier trop lourd',
         429 => 'Trop de tentatives',
         500 => 'Erreur du serveur',
     ];
