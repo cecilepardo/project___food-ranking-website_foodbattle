@@ -14,6 +14,7 @@ use App\Controllers\AuthController;
 use App\Controllers\DishController;
 use App\Controllers\HomeController;
 use App\Controllers\LegalController;
+use App\Controllers\RandomDishController;
 use App\Controllers\RankingController;
 use App\Controllers\ThemeController;
 use App\Core\Router;
@@ -29,6 +30,8 @@ return function (Router $router): void {
     $router->get('/classement', [RankingController::class, 'index']);    // ancien classement.php
     $router->get('/plat/{id}',  [DishController::class, 'show']);        // ancien plat.php
     $router->get('/mentions-legales', [LegalController::class, 'index']);
+    $router->get('/hasard',      [RandomDishController::class, 'pick']);      // roue du destin, sans JavaScript
+    $router->get('/hasard.json', [RandomDishController::class, 'pickJson']);  // roue du destin, animation
 
     // Préférence d'affichage : ouverte à tous, connecté ou non (cookie, pas de compte nécessaire).
     $router->post('/theme', [ThemeController::class, 'toggle']);

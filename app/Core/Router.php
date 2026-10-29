@@ -97,7 +97,8 @@ class Router
     private function addRoute(string $method, string $path, array $action): void
     {
         // "/plat/{id}" devient l'expression régulière "#^/plat/(?P<id>\d+)$#"
-        $pattern = '#^' . preg_replace('#\{(\w+)\}#', '(?P<$1>\d+)', $path) . '$#';
+        // Le point (ex. "/hasard.json") est échappé : sinon il accepterait n'importe quel caractère.
+        $pattern = '#^' . preg_replace('#\{(\w+)\}#', '(?P<$1>\d+)', str_replace('.', '\.', $path)) . '$#';
 
         $this->routes[] = [
             'method'      => $method,
