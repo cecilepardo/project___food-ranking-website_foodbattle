@@ -181,6 +181,36 @@ class Dish
     }
 
     /**
+     * Un plat tiré au sort (filtré par catégorie si $category n'est pas null), ou null s'il n'y en a aucun.
+     */
+    public static function random(?string $category = null): ?array
+    {
+        return self::randomMany(1, $category)[0] ?? null;
+    }
+
+    /**
+     * $limit plats différents, dans un ordre tiré au sort par PostgreSQL (moins s'il n'y en a pas assez).
+     * Juste ce qu'il faut pour les afficher sur la roue : nom, catégorie (photo par défaut) et restaurant.
+     */
+    public static function randomMany(int $limit, ?string $category = null): array
+    {
+        $where  = $category === null ? '' : 'WHERE d.category = ?';
+        $params = $category === null ? [$limit] : [$category, $limit];
+
+        $statement = Database::get()->prepare(
+            "SELECT d.id, d.name, d.category, e.name AS restaurant
+             FROM dishes d
+             JOIN establishments e ON e.id = d.establishment_id
+             $where
+             ORDER BY random()
+             LIMIT ?"
+        );
+        $statement->execute($params);
+
+        return $statement->fetchAll();
+    }
+
+    /**
      * Dans un LIKE, « % » et « _ » sont des jokers : on les échappe pour qu'une recherche
      * de « 100% » cherche vraiment le texte « 100% ». PostgreSQL utilise « \ » comme caractère d'échappement.
      */
