@@ -6,10 +6,31 @@ DIR=$(mktemp -d)
 RUN=$(date +%s)   # suffixe unique : les scripts se relancent sans remettre la base à zéro
 PASS=0; FAIL=0; NOTE=0
 
+# Dossier où enregistrer la réponse de chaque test en échec (DUMP=dossier bash tests/…) ; vide = rien n'est enregistré.
+DUMP=${DUMP:-}
+
 # check "description" commande… : ✅ si la commande réussit, ❌ sinon.
 check() {
     local desc=$1; shift
-    if "$@"; then echo "✅ $desc"; PASS=$((PASS + 1)); else echo "❌ $desc"; FAIL=$((FAIL + 1)); fi
+    if "$@"; then
+        echo "✅ $desc"; PASS=$((PASS + 1))
+    else
+        echo "❌ $desc"; FAIL=$((FAIL + 1))
+        dump_failure "$desc"
+    fi
+}
+
+# Enregistre la dernière réponse (statut, en-têtes, page) d'un test en échec, si DUMP est défini.
+# Utile quand un échec ne se reproduit pas : on garde ce que le serveur a vraiment renvoyé.
+dump_failure() {
+    [ -n "$DUMP" ] || return 0
+    mkdir -p "$DUMP"
+    {
+        echo "== $1"
+        echo "CODE=$CODE LOC=$LOC"
+        cat "$DIR/headers"
+        echo "$BODY"
+    } > "$DUMP/echec-$RUN-$FAIL.txt"
 }
 
 # note "texte" : constat connu, ni réussite ni échec.
