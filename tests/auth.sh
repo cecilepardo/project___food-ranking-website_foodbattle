@@ -185,6 +185,11 @@ check "/\pirate.com refusé" grep -qF '/\pirate.com           => refusé' <<<"$o
 check "https://pirate.com refusé" grep -q '^https://pirate.com .*=> refusé' <<<"$out"
 check "javascript: refusé" grep -q '^javascript:alert(1) .*=> refusé' <<<"$out"
 check "chaîne vide refusée" grep -q '^(vide) .*=> refusé' <<<"$out"
+check "/<tabulation>/pirate.com refusé (le navigateur lirait //pirate.com)" grep -qF '/\t/pirate.com         => refusé' <<<"$out"
+check "/<retour à la ligne>/pirate.com refusé" grep -qF '/\n/pirate.com         => refusé' <<<"$out"
+req th GET /classement; t=$(token)
+req th POST /theme --data-urlencode "token=$t" --data "back=%2F%09%2Fpirate.com"
+check "bouton thème avec back=/<tabulation>/pirate.com => renvoyé vers /" [ "$LOC" = / ]
 
 section "RequireGuest"
 step1 l user@foodbattle.local; password l user@foodbattle.local foodbattle-user
