@@ -18,7 +18,7 @@ accessible au public. Il sépare **ce qui est déjà prêt** de **ce qui reste �
 | Comptes | Comptes de démo aux mots de passe publics | Aucun compte connu ; premier admin créé à l'installation | Les mots de passe de démo sont écrits dans le README |
 | HTTPS | Non (http://localhost) | Oui, via un proxy (Caddy, Nginx…) | Mots de passe et cookie de session chiffrés sur le réseau |
 | Adresse des visiteurs | Celle de la passerelle Docker | La vraie IP, transmise par le proxy | Sinon la limite de 20 tentatives par IP bloque tout le monde à la fois |
-| Photos envoyées depuis le dashboard (#47) | Dans `public/uploads/` du poste | Dans un volume Docker dédié, sauvegardé | Sinon elles disparaissent à chaque reconstruction de l'image |
+| Photos envoyées depuis le dashboard ([#47](https://github.com/SIMPLON-DIST-CDA-P9-200473/foodbattle-CL-LM/pull/47)) | Dans `public/uploads/` du poste | Dans un volume Docker dédié, sauvegardé | Sinon elles disparaissent à chaque reconstruction de l'image |
 | Redémarrage | Manuel | Automatique (`restart: unless-stopped`) | Le site revient seul après un redémarrage du serveur |
 
 ## 2. Déjà prêt
@@ -238,7 +238,7 @@ RUN if [ "$APP_ENV" = "prod" ]; then \
 par la passerelle Docker. À ajuster si le proxy est ailleurs. Le code PHP (`ThrottleAuth`) n'a pas à changer :
 il lit `REMOTE_ADDR`, que le module remplace.
 
-### 3.7 Photos envoyées depuis le dashboard (#47)
+### 3.7 Photos envoyées depuis le dashboard ([#47](https://github.com/SIMPLON-DIST-CDA-P9-200473/foodbattle-CL-LM/pull/47))
 
 L'admin peut joindre une photo à un plat ; elle est enregistrée dans `public/uploads/plats/`.
 
@@ -336,7 +336,7 @@ docker compose -f compose.prod.yaml --env-file .env.prod exec -T db \
   pg_restore -U foodbattle -d foodbattle --clean --if-exists < foodbattle-2026-11-02.dump
 ```
 
-**Photos envoyées** (#47), qui ne sont pas dans la base :
+**Photos envoyées** ([#47](https://github.com/SIMPLON-DIST-CDA-P9-200473/foodbattle-CL-LM/pull/47)), qui ne sont pas dans la base :
 
 ```bash
 docker run --rm -v foodbattle_uploads:/uploads -v /opt/sauvegardes:/backup alpine \
@@ -372,7 +372,7 @@ sur une installation locale.
 - **Un seul serveur** : les sessions sont des fichiers dans le conteneur `app`. Un redémarrage
   déconnecte les utilisateurs ; plusieurs serveurs demanderaient des sessions partagées (en base, par exemple).
 - **Pas d'envoi d'email** : pas de mot de passe oublié. Un admin peut remettre un mot de passe en base.
-- **Photos envoyées** (#47) : pas de redimensionnement ni de remplacement de la photo d'un plat existant
+- **Photos envoyées** ([#47](https://github.com/SIMPLON-DIST-CDA-P9-200473/foodbattle-CL-LM/pull/47)) : pas de redimensionnement ni de remplacement de la photo d'un plat existant
   (la page Modifier ne gère que le nom et le prix).
 - **Métadonnées des photos envoyées** : elles sont gardées telles quelles, y compris la position GPS
   d'une photo prise au téléphone. Les retirer demande de réencoder l'image (extension PHP GD, non installée).
