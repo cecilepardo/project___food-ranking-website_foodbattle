@@ -95,3 +95,6 @@ les champs de saisie sont des rectangles arrondis.
 - Zones cliquables d'au moins 44 px de haut pour les boutons.
 - Mouvement réduit respecté (la roue ne tourne pas).
 - Icônes décoratives masquées aux lecteurs d'écran ; jamais d'information portée par la couleur seule.
+
+[FoodBattle — Design system & maquettes.pdf](https://github.com/user-attachments/files/34211752/FoodBattle.Design.system.maquettes.pdf)
+
