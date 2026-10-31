@@ -1,6 +1,35 @@
+![FoodBattle : « Qui mérite la première place ? » Burgers, tacos et pizzas du quartier, à noter et à départager](docs/images/header.jpg)
+
 # FoodBattle (architecture MVC)
 
+Site de vote et d'avis sur les burgers, tacos et pizzas du quartier.
+Projet de formation Simplon (CDA), réalisé en binôme par Cécile Lavrut Pardo et Ludwig Marais.
+
 Refonte du prototype `app/` en architecture MVC, avec correction des failles et des bugs relevés à l'audit (voir « Corrections apportées »).
+
+## Aperçu
+
+| Thème sombre (par défaut) | Thème clair |
+|---|---|
+| ![Page d'accueil en thème sombre : recherche, filtre par catégorie et cartes de plats avec prix et notes](docs/images/accueil-sombre.jpg) | ![Page d'accueil en thème clair, motif de piments en fond](docs/images/accueil-clair.jpg) |
+
+| Connexion en une étape | Fiche plat et avis |
+|---|---|
+| ![Connexion : un seul champ email, puis mot de passe ou inscription](docs/images/connexion.jpg) | ![Fiche d'un burger avec bouton de vote et formulaire d'avis](docs/images/fiche-plat-avis.jpg) |
+
+| Roue du destin | Le plat tiré au sort |
+|---|---|
+| ![Fenêtre « Je ne sais pas quoi manger ! » : roue en rotation et filtre par catégorie](docs/images/roue-rotation.jpg) | ![Résultat de la roue : Le Poulet Crunch, prix, note, boutons Voir le plat et Retenter ma chance](docs/images/roue-resultat.jpg) |
+
+### Modération des avis (admin)
+
+![Tableau de modération des avis filtré par statut, avec les boutons Publier, Refuser et Dépublier](docs/images/admin-moderation.jpg)
+
+### Design system et maquettes
+
+![Design system : couleurs des thèmes sombre et clair avec ratios de contraste, typographies Bungee et Nunito, boutons, maquette de l'accueil](docs/images/design-system-maquettes.jpg)
+
+Source : [Figma](https://www.figma.com/design/vKmUDbfqhsOdcx5HXXaDwa) · détail dans [Design system](docs/DESIGN-SYSTEM.md)
 
 ## Ressources
 

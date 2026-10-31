@@ -4,6 +4,8 @@ Source : maquette Figma « FoodBattle — Design system » (page Fondations), [l
 Dans le code, chaque valeur est une **variable CSS** : `tokens.css` (commun aux deux thèmes),
 `theme-dark.css` (thème par défaut) et `theme-light.css`. Si l'un change, on met l'autre à jour.
 
+![Design system : couleurs des thèmes sombre et clair avec ratios de contraste, typographies Bungee et Nunito, boutons, maquette de l'accueil](images/design-system-maquettes.jpg)
+
 ## 1. Intention
 
 **Public visé** : un public jeune, mais pas trop, qui sort, partage ses bonnes adresses et accepte de payer
@@ -95,6 +97,3 @@ les champs de saisie sont des rectangles arrondis.
 - Zones cliquables d'au moins 44 px de haut pour les boutons.
 - Mouvement réduit respecté (la roue ne tourne pas).
 - Icônes décoratives masquées aux lecteurs d'écran ; jamais d'information portée par la couleur seule.
-
-[FoodBattle — Design system & maquettes.pdf](https://github.com/user-attachments/files/34211752/FoodBattle.Design.system.maquettes.pdf)
-
